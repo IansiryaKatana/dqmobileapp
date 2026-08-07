@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="ic_launcher_background">#FF0B141D</color>
+    <color name="dq_cream">#FFF8F5ED</color>
+    <color name="dq_white">#FFFFFFFF</color>
+    <color name="dq_dark_bg">#FF0D1822</color>
+    <color name="dq_dark_card">#FF162232</color>
+</resources>

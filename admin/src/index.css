@@ -1,0 +1,54 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter Tight", ui-sans-serif, system-ui, sans-serif;
+  --color-cream: #faf6f0;
+  --color-cream-dark: #f0e9df;
+  --color-sidebar: #1a2332;
+  --color-sidebar-hover: #243044;
+  --color-sidebar-border: #2d3a4f;
+  --color-ink: #1c1917;
+  --color-ink-muted: #57534e;
+  --color-ink-subtle: #78716c;
+  --color-accent: #b45309;
+  --color-accent-hover: #92400e;
+  --color-accent-soft: #fef3c7;
+  --color-border: #e7e0d5;
+  --color-surface: #ffffff;
+  --color-danger: #dc2626;
+  --color-danger-soft: #fef2f2;
+}
+
+body {
+  @apply bg-cream font-sans text-ink antialiased overflow-x-hidden;
+}
+
+html {
+  @apply overflow-x-hidden;
+}
+
+.safe-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+/* Dark nav drawer close button */
+.nav-sheet > button {
+  @apply text-stone-400 hover:bg-sidebar-hover hover:text-white;
+}
+
+/* Horizontal scroll tabs on small screens */
+.tabs-scroll {
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.tabs-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+input,
+textarea,
+select,
+button {
+  @apply outline-none;
+}
