@@ -1,4 +1,4 @@
-import { FormEvent, useMemo, useRef, useState } from 'react'
+import { FormEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ChevronLeft, ImageIcon, Smartphone, Upload, X } from 'lucide-react'
 import { toast } from 'sonner'
@@ -16,12 +16,51 @@ type PhoneScreen = {
   slots: string[]
 }
 
+const WUDU_SLOTS = [
+  {
+    key: 'bismillah',
+    label: 'Step 1 · Bismillah',
+    description: 'Intention / opening',
+    fallback: 'assets/images/wudu_bismillah.png',
+  },
+  { key: 'hands', label: 'Step 2 · Hands', description: 'Wash both hands', fallback: null },
+  { key: 'mouth', label: 'Step 3 · Mouth', description: 'Rinse the mouth', fallback: null },
+  { key: 'nose', label: 'Step 4 · Nose', description: 'Rinse the nostrils', fallback: null },
+  { key: 'face', label: 'Step 5 · Face', description: 'Wash the full face', fallback: null },
+  { key: 'arms', label: 'Step 6 · Arms', description: 'Wash to the elbows', fallback: null },
+  { key: 'head', label: 'Step 7 · Head', description: 'Wipe the head', fallback: null },
+  { key: 'ears', label: 'Step 8 · Ears', description: 'Wipe both ears', fallback: null },
+  { key: 'feet', label: 'Step 9 · Feet', description: 'Wash to the ankles', fallback: null },
+  { key: 'closing', label: 'Step 10 · Closing duʿā', description: 'Closing invocation', fallback: null },
+] as const
+
+const PRAY_SLOTS = [
+  { key: 'intention', label: 'Step 1 · Intention', description: 'Niyyah before starting', fallback: null },
+  { key: 'takbir', label: 'Step 2 · Takbir', description: 'Opening Allahu Akbar', fallback: null },
+  { key: 'qiyam', label: 'Step 3 · Qiyam', description: 'Standing / recitation', fallback: null },
+  { key: 'ruku', label: 'Step 4 · Ruku', description: 'Bowing', fallback: null },
+  { key: 'itidal', label: "Step 5 · I'tidal", description: 'Standing after ruku', fallback: null },
+  { key: 'sujud', label: 'Step 6 · Sujud', description: 'First prostration', fallback: null },
+  { key: 'jalsa', label: 'Step 7 · Jalsa', description: 'Sitting between sujud', fallback: null },
+  { key: 'sujud2', label: 'Step 8 · Second sujud', description: 'Complete the rakʿah', fallback: null },
+  { key: 'tashahhud', label: 'Step 9 · Tashahhud', description: 'Final sitting', fallback: null },
+  { key: 'salam', label: 'Step 10 · Salam', description: 'Ending the prayer', fallback: null },
+] as const
+
+const PRAY_SCREENS: PhoneScreen[] = [
+  { key: 'pray-fajr', title: 'Fajr prayer', subtitle: 'Step images', slots: PRAY_SLOTS.map((s) => s.key) },
+  { key: 'pray-dhuhr', title: 'Dhuhr prayer', subtitle: 'Step images', slots: PRAY_SLOTS.map((s) => s.key) },
+  { key: 'pray-asr', title: 'Asr prayer', subtitle: 'Step images', slots: PRAY_SLOTS.map((s) => s.key) },
+  { key: 'pray-maghrib', title: 'Maghrib prayer', subtitle: 'Step images', slots: PRAY_SLOTS.map((s) => s.key) },
+  { key: 'pray-isha', title: 'Isha prayer', subtitle: 'Step images', slots: PRAY_SLOTS.map((s) => s.key) },
+]
+
 const SCREENS: PhoneScreen[] = [
   {
     key: 'onboarding',
     title: 'Onboarding',
-    subtitle: 'Welcome / logo',
-    slots: ['logo'],
+    subtitle: 'Background / logo',
+    slots: ['background', 'logo'],
   },
   {
     key: 'home',
@@ -66,6 +105,13 @@ const SCREENS: PhoneScreen[] = [
     slots: ['hero'],
   },
   {
+    key: 'wudu',
+    title: 'Wudu Guide',
+    subtitle: 'One image per step',
+    slots: WUDU_SLOTS.map((s) => s.key),
+  },
+  ...PRAY_SCREENS,
+  {
     key: 'guides',
     title: 'Guides',
     subtitle: 'Wudu illustration',
@@ -105,12 +151,74 @@ export function AppMediaPage() {
     return map
   }, [media])
 
-  const screenSlots = (byPage.get(screen.key) ?? []).filter((m) =>
-    screen.slots.includes(m.slot_key),
-  )
+  const screenSlots = (byPage.get(screen.key) ?? [])
+    .filter((m) => screen.slots.includes(m.slot_key))
+    .sort((a, b) => screen.slots.indexOf(a.slot_key) - screen.slots.indexOf(b.slot_key))
 
   const active =
     screenSlots.find((m) => m.slot_key === selectedSlot) ?? screenSlots[0] ?? null
+
+  useEffect(() => {
+    if (isLoading || screenKey !== 'wudu') return
+    const existing = new Set((byPage.get('wudu') ?? []).map((m) => m.slot_key))
+    const missing = WUDU_SLOTS.filter((s) => !existing.has(s.key))
+    if (missing.length === 0) return
+    let cancelled = false
+    void (async () => {
+      const rows = missing.map((s) => ({
+        page_key: 'wudu',
+        slot_key: s.key,
+        label: s.label,
+        description: s.description,
+        media_type: 'image',
+        fallback_asset: s.fallback,
+        sort_order: WUDU_SLOTS.findIndex((x) => x.key === s.key) + 1,
+      }))
+      const { error } = await supabase.from('app_page_media').upsert(rows, {
+        onConflict: 'page_key,slot_key',
+      })
+      if (cancelled) return
+      if (error) {
+        toast.error(error.message)
+        return
+      }
+      await queryClient.invalidateQueries({ queryKey: ['app-page-media'] })
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [isLoading, screenKey, byPage, queryClient])
+
+  useEffect(() => {
+    if (isLoading || !screenKey.startsWith('pray-')) return
+    const existing = new Set((byPage.get(screenKey) ?? []).map((m) => m.slot_key))
+    const missing = PRAY_SLOTS.filter((s) => !existing.has(s.key))
+    if (missing.length === 0) return
+    let cancelled = false
+    void (async () => {
+      const rows = missing.map((s) => ({
+        page_key: screenKey,
+        slot_key: s.key,
+        label: s.label,
+        description: s.description,
+        media_type: 'image',
+        fallback_asset: s.fallback,
+        sort_order: PRAY_SLOTS.findIndex((x) => x.key === s.key) + 1,
+      }))
+      const { error } = await supabase.from('app_page_media').upsert(rows, {
+        onConflict: 'page_key,slot_key',
+      })
+      if (cancelled) return
+      if (error) {
+        toast.error(error.message)
+        return
+      }
+      await queryClient.invalidateQueries({ queryKey: ['app-page-media'] })
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [isLoading, screenKey, byPage, queryClient])
 
   const saveUrl = useMutation({
     mutationFn: async ({ id, url }: { id: string; url: string | null }) => {
@@ -402,7 +510,7 @@ function PhoneScreenPreview({
     )
   }
 
-  if (screenKey === 'logistics') {
+  if (screenKey === 'logistics' || screenKey === 'wudu' || screenKey.startsWith('pray-')) {
     return (
       <div className="grid grid-cols-2 gap-2">
         {slots.map((s) => (

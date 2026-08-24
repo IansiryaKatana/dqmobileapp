@@ -3,13 +3,16 @@ import 'package:flutter/material.dart';
 /// Donate Quran brand palette from Figma design tokens.
 abstract final class AppColors {
   static const navy = Color(0xFF0B141D);
-  static const yellow = Color(0xFFFFC400);
+  /// Brand bronze accent (replaces gold `#FFC400`).
+  static const yellow = Color(0xFF98724D);
   static const cream = Color(0xFFF8F5ED);
   static const sand = Color(0xFFEFE8D8);
   static const charcoal = Color(0xFF171717);
   static const muted = Color(0xFF6B7280);
   static const border = Color(0xFFE5E0D5);
   static const white = Color(0xFFFFFFFF);
+  /// Text/icons on filled brand surfaces (CTAs, chips, badges).
+  static const onBrand = white;
   static const destructive = Color(0xFFD4183D);
 
   static const darkBg = Color(0xFF0D1822);

@@ -41,42 +41,6 @@
           ]
         }
       }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:930683610105:android:fa0f7a33bb52c0ec",
-        "android_client_info": {
-          "package_name": "com.example.aws.blogapp.Activities"
-        }
-      },
-      "oauth_client": [
-        {
-          "client_id": "930683610105-qvt031ml3r6gtp4knm2en9oafr3q2lhi.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
-      "api_key": [
-        {
-          "current_key": "AIzaSyAtcdl2MtJ0-xzw7A534HgMdbHEnZyumDE"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "930683610105-qvt031ml3r6gtp4knm2en9oafr3q2lhi.apps.googleusercontent.com",
-              "client_type": 3
-            },
-            {
-              "client_id": "930683610105-08jvlbmb0gepqssmhophj2tjk3bpj4kr.apps.googleusercontent.com",
-              "client_type": 2,
-              "ios_info": {
-                "bundle_id": "com.donatequran.donatequran"
-              }
-            }
-          ]
-        }
-      }
     }
   ],
   "configuration_version": "1"

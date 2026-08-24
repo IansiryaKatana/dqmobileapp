@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
 
-/// Figma wordmark: "Donate" in navy/white + "Quran" in yellow.
+/// Figma wordmark: "Donate" in navy/white + "Quran" in brand bronze.
 class DqLogo extends StatelessWidget {
   const DqLogo({super.key, this.size = LogoSize.medium, this.light = false});
 

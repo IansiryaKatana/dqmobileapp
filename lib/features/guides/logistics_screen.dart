@@ -1,165 +1,49 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/services/content_repository.dart';
 import '../../core/theme/app_colors.dart';
 import '../../shared/widgets/dq_buttons.dart';
 import '../../shared/widgets/figma_components.dart';
 
-enum _LogisticsBodyKind { visaGrid, ihramSteps, emojiTips }
-
-class _LogisticsItemData {
-  const _LogisticsItemData({
-    required this.title,
-    required this.snippet,
-    required this.icon,
-    required this.kind,
-    this.tips,
-    this.ihramSteps,
-  });
-
-  final String title;
-  final String snippet;
-  final IconData icon;
-  final _LogisticsBodyKind kind;
-  final List<(String emoji, String text)>? tips;
-  final List<(String n, String title, String desc)>? ihramSteps;
+IconData logisticsIconFromName(String name) {
+  return switch (name) {
+    'assignment_turned_in_outlined' => Icons.assignment_turned_in_outlined,
+    'checkroom_outlined' => Icons.checkroom_outlined,
+    'account_balance_outlined' => Icons.account_balance_outlined,
+    'mosque_outlined' => Icons.mosque_outlined,
+    'park_outlined' => Icons.park_outlined,
+    'smartphone_outlined' => Icons.smartphone_outlined,
+    'payments_outlined' => Icons.payments_outlined,
+    'wifi_outlined' => Icons.wifi_outlined,
+    'train_outlined' => Icons.train_outlined,
+    _ => Icons.info_outline,
+  };
 }
 
-class _LogisticsGroupData {
-  const _LogisticsGroupData({required this.label, required this.items});
-
-  final String label;
-  final List<_LogisticsItemData> items;
-}
-
-const _groups = [
-  _LogisticsGroupData(
-    label: 'Before You Travel',
-    items: [
-      _LogisticsItemData(
-        title: 'Umrah Visa',
-        snippet: 'e-Visa SAR 535 · Visa on arrival SAR 480',
-        icon: Icons.assignment_turned_in_outlined,
-        kind: _LogisticsBodyKind.visaGrid,
-      ),
-      _LogisticsItemData(
-        title: 'Ihram — What to Know',
-        snippet: 'Ghusl · Niyyah · Two unstitched cloths',
-        icon: Icons.checkroom_outlined,
-        kind: _LogisticsBodyKind.ihramSteps,
-        ihramSteps: [
-          ('1', 'Ghusl & Prayer', 'Perform ghusl (bath) and 2 rakat nafl salah before entering Ihram.'),
-          ('2', 'Enter before Meeqat', 'Ihram must be entered before the meeqat boundary. On a flight, the airline will announce the crossing point.'),
-          ('3', 'Wear the Garments', 'Two white unstitched cloths — izar (lower) and rida (upper). Slippers must leave the middle bone uncovered.'),
-        ],
-      ),
-    ],
-  ),
-  _LogisticsGroupData(
-    label: 'Holy Sites',
-    items: [
-      _LogisticsItemData(
-        title: 'Masjid al-Haram, Makkah',
-        snippet: 'Grand Mosque tips · Arrive 30 min early',
-        icon: Icons.account_balance_outlined,
-        kind: _LogisticsBodyKind.emojiTips,
-        tips: [
-          ('🏨', 'Take a hotel card so you can find your way back.'),
-          ('🚪', 'Identify the closest door to the Haram from your hotel.'),
-          ('⏰', 'Arrive at least 30 min before salaah time to find a spot.'),
-          ('🕌', "For Jumu'ah, arrive no later than 10am in off-peak seasons."),
-        ],
-      ),
-      _LogisticsItemData(
-        title: 'Masjid an-Nabawi, Madinah',
-        snippet: 'Rawdah booking · Respectful adab',
-        icon: Icons.mosque_outlined,
-        kind: _LogisticsBodyKind.emojiTips,
-        tips: [
-          ('📱', 'Book Rawdah visit slots via the Nusuk app in advance.'),
-          ('🤲', "Make du'a quietly and avoid blocking walkways."),
-          ('👟', 'Wear comfortable shoes — you will walk significant distances.'),
-        ],
-      ),
-      _LogisticsItemData(
-        title: 'Jannat al-Baqi',
-        snippet: 'Visiting the blessed cemetery',
-        icon: Icons.park_outlined,
-        kind: _LogisticsBodyKind.emojiTips,
-        tips: [
-          ('🕊️', "Visit with humility and make du'a for the deceased companions."),
-          ('📵', 'Photography is discouraged — focus on reflection and prayer.'),
-        ],
-      ),
-    ],
-  ),
-  _LogisticsGroupData(
-    label: 'Apps & Booking',
-    items: [
-      _LogisticsItemData(
-        title: 'Nusuk App',
-        snippet: 'Official Saudi pilgrimage platform',
-        icon: Icons.smartphone_outlined,
-        kind: _LogisticsBodyKind.emojiTips,
-        tips: [
-          ('📲', 'Download Nusuk for Umrah permits, Rawdah slots, and transport.'),
-          ('🪪', 'Link your passport and visa for seamless check-in.'),
-        ],
-      ),
-      _LogisticsItemData(
-        title: 'Money & Payments',
-        snippet: 'SAR cash · Cards widely accepted',
-        icon: Icons.payments_outlined,
-        kind: _LogisticsBodyKind.emojiTips,
-        tips: [
-          ('💳', 'Major credit cards work in hotels and malls.'),
-          ('💵', 'Keep some Saudi Riyals for taxis and small vendors.'),
-        ],
-      ),
-      _LogisticsItemData(
-        title: 'Mobile & Internet',
-        snippet: 'eSIM · Local SIM at airport',
-        icon: Icons.wifi_outlined,
-        kind: _LogisticsBodyKind.emojiTips,
-        tips: [
-          ('📶', 'Purchase a local SIM or eSIM at the airport for maps and Nusuk.'),
-          ('🔋', 'Carry a power bank — you will use your phone heavily.'),
-        ],
-      ),
-      _LogisticsItemData(
-        title: 'Haramain Train',
-        snippet: 'Makkah ↔ Madinah high-speed rail',
-        icon: Icons.train_outlined,
-        kind: _LogisticsBodyKind.emojiTips,
-        tips: [
-          ('🚄', 'Book train tickets early during peak Hajj and Ramadan seasons.'),
-          ('🧳', 'Arrive at the station at least 60 minutes before departure.'),
-        ],
-      ),
-    ],
-  ),
-];
-
-class LogisticsScreen extends StatefulWidget {
+class LogisticsScreen extends ConsumerStatefulWidget {
   const LogisticsScreen({super.key});
 
   @override
-  State<LogisticsScreen> createState() => _LogisticsScreenState();
+  ConsumerState<LogisticsScreen> createState() => _LogisticsScreenState();
 }
 
-class _LogisticsScreenState extends State<LogisticsScreen> {
+class _LogisticsScreenState extends ConsumerState<LogisticsScreen> {
   int? _openIndex;
 
-  int _globalIndex(int groupIdx, int itemIdx) {
+  int _globalIndex(List<LogisticsGroup> groups, int groupIdx, int itemIdx) {
     var offset = 0;
     for (var g = 0; g < groupIdx; g++) {
-      offset += _groups[g].items.length;
+      offset += groups[g].items.length;
     }
     return offset + itemIdx;
   }
 
   @override
   Widget build(BuildContext context) {
+    final copy = ref.watch(logisticsCopyProvider).valueOrNull ?? LogisticsCopy.fallback;
+    final groups = copy.groups;
     return Scaffold(
       backgroundColor: AppColors.cream,
       body: SafeArea(
@@ -170,14 +54,14 @@ class _LogisticsScreenState extends State<LogisticsScreen> {
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
                 children: [
-                  for (var gi = 0; gi < _groups.length; gi++) ...[
-                    DqSectionLabel(_groups[gi].label),
-                    for (var ii = 0; ii < _groups[gi].items.length; ii++) ...[
+                  for (var gi = 0; gi < groups.length; gi++) ...[
+                    DqSectionLabel(groups[gi].label),
+                    for (var ii = 0; ii < groups[gi].items.length; ii++) ...[
                       _AccordionCard(
-                        item: _groups[gi].items[ii],
-                        expanded: _openIndex == _globalIndex(gi, ii),
+                        item: groups[gi].items[ii],
+                        expanded: _openIndex == _globalIndex(groups, gi, ii),
                         onTap: () {
-                          final idx = _globalIndex(gi, ii);
+                          final idx = _globalIndex(groups, gi, ii);
                           setState(() => _openIndex = _openIndex == idx ? null : idx);
                         },
                       ),
@@ -198,7 +82,7 @@ class _LogisticsScreenState extends State<LogisticsScreen> {
 class _AccordionCard extends StatelessWidget {
   const _AccordionCard({required this.item, required this.expanded, required this.onTap});
 
-  final _LogisticsItemData item;
+  final LogisticsItem item;
   final bool expanded;
   final VoidCallback onTap;
 
@@ -226,7 +110,7 @@ class _AccordionCard extends StatelessWidget {
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(color: AppColors.sand, borderRadius: BorderRadius.circular(12)),
-                      child: Icon(item.icon, size: 20, color: AppColors.navy),
+                      child: Icon(logisticsIconFromName(item.icon), size: 20, color: AppColors.navy),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -256,37 +140,38 @@ class _AccordionCard extends StatelessWidget {
   }
 
   Widget _buildBody() {
+    final visaCards = (item.visaCards != null && item.visaCards!.isNotEmpty)
+        ? item.visaCards!
+        : const [
+            LogisticsVisaCard(title: 'e-Visa', lines: ['SAR 535 (~£114)', 'Application & insurance included']),
+            LogisticsVisaCard(title: 'On Arrival', lines: ['SAR 480 (~£102)', '+ SAR 180 medical (~£38)']),
+          ];
+    final steps = item.ihramSteps ?? const <LogisticsIhramStep>[];
+    final tips = item.tips ?? const <LogisticsTip>[];
     return switch (item.kind) {
-      _LogisticsBodyKind.visaGrid => const Row(
+      LogisticsBodyKind.visaGrid => Row(
           children: [
-            Expanded(
-              child: _InfoChip(
-                title: 'e-Visa',
-                lines: ['SAR 535 (~£114)', 'Application & insurance included'],
+            for (var i = 0; i < visaCards.length; i++) ...[
+              if (i > 0) const SizedBox(width: 8),
+              Expanded(
+                child: _InfoChip(title: visaCards[i].title, lines: visaCards[i].lines),
               ),
-            ),
-            SizedBox(width: 8),
-            Expanded(
-              child: _InfoChip(
-                title: 'On Arrival',
-                lines: ['SAR 480 (~£102)', '+ SAR 180 medical (~£38)'],
-              ),
-            ),
-          ],
-        ),
-      _LogisticsBodyKind.ihramSteps => Column(
-          children: [
-            for (var i = 0; i < item.ihramSteps!.length; i++) ...[
-              if (i > 0) const SizedBox(height: 10),
-              _NumberedRow(n: item.ihramSteps![i].$1, title: item.ihramSteps![i].$2, desc: item.ihramSteps![i].$3),
             ],
           ],
         ),
-      _LogisticsBodyKind.emojiTips => Column(
+      LogisticsBodyKind.ihramSteps => Column(
           children: [
-            for (var i = 0; i < item.tips!.length; i++) ...[
+            for (var i = 0; i < steps.length; i++) ...[
+              if (i > 0) const SizedBox(height: 10),
+              _NumberedRow(n: steps[i].n, title: steps[i].title, desc: steps[i].desc),
+            ],
+          ],
+        ),
+      LogisticsBodyKind.emojiTips => Column(
+          children: [
+            for (var i = 0; i < tips.length; i++) ...[
               if (i > 0) const SizedBox(height: 8),
-              _EmojiTip(item.tips![i].$1, item.tips![i].$2),
+              _EmojiTip(tips[i].emoji, tips[i].text),
             ],
           ],
         ),

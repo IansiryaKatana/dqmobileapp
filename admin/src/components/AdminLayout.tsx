@@ -277,8 +277,11 @@ export function AdminLayout() {
               Donate Quran
             </SheetDescription>
             <SheetTitle className="text-white">Portal</SheetTitle>
+            <div className="mt-3 h-1 w-full overflow-hidden rounded-full bg-sidebar-border" aria-hidden>
+              <div className="h-full w-3/5 rounded-full bg-amber-400" />
+            </div>
           </SheetHeader>
-          <div className="min-h-0 overflow-y-auto">
+          <div className="sidebar-scroll min-h-0 overflow-y-auto">
             <NavLinks
               items={visibleNav}
               pathname={pathname}
@@ -298,11 +301,14 @@ export function AdminLayout() {
       </Sheet>
 
       <aside className="hidden h-dvh w-60 shrink-0 flex-col border-r border-sidebar-border bg-sidebar p-4 text-stone-200 lg:flex">
-        <div className="mb-8 px-3">
+        <div className="mb-6 px-3">
           <p className="text-xs font-semibold tracking-widest text-amber-400 uppercase">Donate Quran</p>
           <h1 className="text-lg font-bold text-white">Portal</h1>
+          <div className="mt-3 h-1 w-full overflow-hidden rounded-full bg-sidebar-border" aria-hidden>
+            <div className="h-full w-3/5 rounded-full bg-amber-400" />
+          </div>
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="sidebar-scroll min-h-0 flex-1">
           <NavLinks items={visibleNav} pathname={pathname} />
         </div>
         <Button

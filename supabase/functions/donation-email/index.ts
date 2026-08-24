@@ -97,7 +97,7 @@ Deno.serve(async (req) => {
   let subjectTemplate = "Donation receipt {{receipt_id}}";
   let intro =
     "Your gift of {{amount}} helps print and distribute Qurans.";
-  let footer = "100% of public donations go towards Quran printing.";
+  let footer = "Donations fund Quran printing. Store processing fees may apply; the remainder goes to printing.";
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";

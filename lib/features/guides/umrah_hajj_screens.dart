@@ -253,7 +253,7 @@ class GuideStepsScreen extends ConsumerWidget {
                       backgroundColor: AppColors.yellow,
                       child: Text(
                         '${i + 1}',
-                        style: const TextStyle(color: AppColors.navy, fontWeight: FontWeight.bold, fontSize: 13),
+                        style: const TextStyle(color: AppColors.onBrand, fontWeight: FontWeight.bold, fontSize: 13),
                       ),
                     ),
                     const SizedBox(width: 14),
@@ -400,7 +400,7 @@ class _JourneyCard extends StatelessWidget {
                 width: 40,
                 height: 40,
                 decoration: const BoxDecoration(color: AppColors.yellow, shape: BoxShape.circle),
-                child: const Icon(Icons.chevron_right, color: AppColors.navy),
+                child: const Icon(Icons.chevron_right, color: AppColors.onBrand),
               ),
             ],
           ),

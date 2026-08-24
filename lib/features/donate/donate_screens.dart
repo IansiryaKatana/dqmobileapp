@@ -57,8 +57,8 @@ class _DonateScreenState extends ConsumerState<DonateScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('Fund Quran printing today', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w800)),
-                              Text('Every £5 funds one Quran copy.', style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 13)),
+                              Text(copy.heroTitle, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w800)),
+                              Text(copy.heroSubtitle, style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 13)),
                             ],
                           ),
                         ),
@@ -75,7 +75,7 @@ class _DonateScreenState extends ConsumerState<DonateScreen> {
                     children: [..._amounts.map(_amountChip), _customChip()],
                   ),
                   const SizedBox(height: 20),
-                  ..._impactCards(),
+                  ..._impactCards(copy),
                   const SizedBox(height: 16),
                   DqCard(
                     child: Row(
@@ -156,6 +156,11 @@ class _DonateScreenState extends ConsumerState<DonateScreen> {
       selected: selected,
       onSelected: (_) => setState(() { _amount = amount; _custom = ''; }),
       selectedColor: AppColors.yellow,
+      checkmarkColor: AppColors.onBrand,
+      labelStyle: TextStyle(
+        color: selected ? AppColors.onBrand : null,
+        fontWeight: FontWeight.w600,
+      ),
     );
   }
 
@@ -185,9 +190,8 @@ class _DonateScreenState extends ConsumerState<DonateScreen> {
     );
   }
 
-  List<Widget> _impactCards() {
-    final impacts = [('Sponsor 1 Quran', '£5'), ('Sponsor 5 Qurans', '£25'), ('Sponsor 10 Qurans', '£50'), ('Sponsor a Box', '£250')];
-    return impacts.map((i) {
+  List<Widget> _impactCards(DonateCopy copy) {
+    return copy.impactCards.map((i) {
       return Container(
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.all(14),
@@ -199,8 +203,8 @@ class _DonateScreenState extends ConsumerState<DonateScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(i.$1, style: const TextStyle(fontWeight: FontWeight.w600)),
-            Text(i.$2, style: const TextStyle(color: AppColors.yellow, fontWeight: FontWeight.bold)),
+            Text(i.label, style: const TextStyle(fontWeight: FontWeight.w600)),
+            Text(i.amountLabel, style: const TextStyle(color: AppColors.yellow, fontWeight: FontWeight.bold)),
           ],
         ),
       );
@@ -279,6 +283,7 @@ class _DonateCheckoutScreenState extends ConsumerState<DonateCheckoutScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final copy = ref.watch(donateCopyProvider).valueOrNull ?? DonateCopy.fallback;
     return Scaffold(
       body: SafeArea(
         child: Column(
@@ -333,16 +338,33 @@ class _DonateCheckoutScreenState extends ConsumerState<DonateCheckoutScreen> {
                     ],
                     const SizedBox(height: 16),
                     DqCard(
-                      child: Row(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Icon(Icons.lock_outline, color: AppColors.yellow),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              'Payment uses the App Store / Play Store checkout via RevenueCat. '
-                              'Supported amounts: £5, £10, £25, £50, £100.',
+                          Text(
+                            copy.checkoutStoreNote,
+                            style: TextStyle(fontSize: 13, color: context.dq.muted),
+                          ),
+                          if (widget.frequency == 'monthly') ...[
+                            const SizedBox(height: 12),
+                            Text(
+                              interpolateCmsCopy(copy.monthlyRenewNote, amount: widget.amount),
                               style: TextStyle(fontSize: 13, color: context.dq.muted),
                             ),
+                          ],
+                          const SizedBox(height: 12),
+                          Wrap(
+                            spacing: 16,
+                            children: [
+                              TextButton(
+                                onPressed: () => context.push('/terms'),
+                                child: const Text('Terms'),
+                              ),
+                              TextButton(
+                                onPressed: () => context.push('/privacy'),
+                                child: const Text('Privacy Policy'),
+                              ),
+                            ],
                           ),
                         ],
                       ),
@@ -365,15 +387,21 @@ class _DonateCheckoutScreenState extends ConsumerState<DonateCheckoutScreen> {
   }
 }
 
-class DonateSuccessScreen extends StatelessWidget {
+class DonateSuccessScreen extends ConsumerWidget {
   const DonateSuccessScreen({super.key, required this.amount, required this.receiptId, this.email});
 
   final int amount;
   final String receiptId;
+  // Kept for checkout routing; the screen does not claim an email was sent.
+  // ignore: unused_field
   final String? email;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final copy = ref.watch(donateCopyProvider).valueOrNull ?? DonateCopy.fallback;
+    final emailCopy = ref.watch(donationEmailCopyProvider).valueOrNull ?? DonationEmailCopy.fallback;
+    final intro = interpolateCmsCopy(emailCopy.intro, amount: amount, receiptId: receiptId);
+    final footer = interpolateCmsCopy(emailCopy.footer, amount: amount, receiptId: receiptId);
     return Scaffold(
       backgroundColor: AppColors.navy,
       body: SafeArea(
@@ -385,9 +413,17 @@ class DonateSuccessScreen extends StatelessWidget {
               child: Column(
                 children: [
                   const Spacer(),
-                  const Text('May Allah reward you', textAlign: TextAlign.center, style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w800)),
+                  Text(
+                    interpolateCmsCopy(copy.successTitle, amount: amount, receiptId: receiptId),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w800),
+                  ),
                   const SizedBox(height: 8),
-                  Text('Your donation of £$amount has been received.', textAlign: TextAlign.center, style: TextStyle(color: Colors.white.withValues(alpha: 0.6))),
+                  Text(
+                    interpolateCmsCopy(copy.successSubtitle, amount: amount, receiptId: receiptId),
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.white.withValues(alpha: 0.6)),
+                  ),
                   const SizedBox(height: 24),
                   Container(
                     width: double.infinity,
@@ -396,12 +432,22 @@ class DonateSuccessScreen extends StatelessWidget {
                     child: Column(
                       children: [
                         Text('Receipt #$receiptId', style: const TextStyle(color: AppColors.yellow, fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 8),
                         Text(
-                          email != null && email!.isNotEmpty
-                              ? 'A confirmation email will be sent to $email. Your receipt is also saved on this device.'
-                              : 'Receipt saved in the Saved tab on this device.',
+                          intro,
                           style: const TextStyle(color: Colors.white70, fontSize: 12),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          footer,
+                          style: const TextStyle(color: Colors.white70, fontSize: 12),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Receipt saved in the Saved tab on this device.',
+                          style: TextStyle(color: Colors.white54, fontSize: 11),
                           textAlign: TextAlign.center,
                         ),
                       ],
@@ -417,7 +463,7 @@ class DonateSuccessScreen extends StatelessWidget {
                   const SizedBox(height: 8),
                   DqGhostButton(
                     label: 'Share Campaign',
-                    onPressed: () => Share.share('I just donated £$amount to fund Quran printing via Donate Quran. Join me: https://donatequran.org'),
+                    onPressed: () => Share.share('I just donated £$amount to fund Quran printing via Donate Quran. Join me: https://donatequran.com'),
                   ),
                 ],
               ),

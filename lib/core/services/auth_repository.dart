@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config/env_config.dart';
 import '../providers/app_state_provider.dart';
+import 'purchase_service.dart';
 import 'push_notification_service.dart';
 
 class AuthRepository {
@@ -91,6 +92,26 @@ class AuthRepository {
 
   Future<void> signOut() async {
     if (_client != null) await _client.auth.signOut();
+    _notifier.logout();
+  }
+
+  /// Permanently deletes the Auth user (Apple 5.1.1(v)). Release fail-closed.
+  Future<void> deleteAccount() async {
+    if (_client == null) {
+      throw Exception('Account deletion requires an online connection.');
+    }
+    final user = _client.auth.currentUser;
+    if (user == null) {
+      throw Exception('Sign in to delete your account');
+    }
+    final res = await _client.functions.invoke('delete-account');
+    final data = res.data;
+    if (res.status >= 400) {
+      final message = data is Map ? data['error']?.toString() : null;
+      throw Exception(message ?? 'Could not delete your account. Please try again.');
+    }
+    await PurchaseService.logOut();
+    await _client.auth.signOut();
     _notifier.logout();
   }
 

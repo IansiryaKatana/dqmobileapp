@@ -31,12 +31,20 @@ const WUDU_ICONS = [
   { value: 'water_drop', label: 'Water drop' },
   { value: 'air', label: 'Air / nose' },
   { value: 'face', label: 'Face' },
-  { value: 'pan_tool', label: 'Arms' },
-  { value: 'self_improvement', label: 'Head / focus' },
+  { value: 'pan_tool', label: 'Arms / takbir' },
+  { value: 'self_improvement', label: 'Head / ruku' },
   { value: 'hearing', label: 'Ears' },
   { value: 'directions_walk', label: 'Feet' },
   { value: 'check_circle', label: 'Check / closing' },
+  { value: 'menu_book', label: 'Book / qiyam' },
+  { value: 'accessibility_new', label: "I'tidal" },
+  { value: 'expand', label: 'Sujud' },
+  { value: 'airline_seat_recline_normal', label: 'Jalsa' },
+  { value: 'volunteer_activism', label: 'Tashahhud' },
+  { value: 'waving_hand', label: 'Salam' },
 ]
+
+const PRAY_STEP_SLUGS = new Set(['pray-fajr', 'pray-dhuhr', 'pray-asr', 'pray-maghrib', 'pray-isha'])
 
 function parseLegacyBody(body: string): Partial<GuideStep> {
   const trimmed = body.trim()
@@ -64,15 +72,17 @@ export function GuideStepFormSheet({ open, onOpenChange, guideSlug, item }: Prop
   const queryClient = useQueryClient()
   const isNew = !item
   const isWudu = guideSlug === 'wudu'
+  const isPraySteps = PRAY_STEP_SLUGS.has(guideSlug)
+  const isInstructional = isWudu || isPraySteps
   const isPray = guideSlug === 'how-to-pray'
-  const isRich = isWudu || isPray
+  const isRich = isInstructional || isPray
 
   const [title, setTitle] = useState('')
   const [subtitle, setSubtitle] = useState('')
   const [description, setDescription] = useState('')
   const [arabic, setArabic] = useState('')
   const [arabicEn, setArabicEn] = useState('')
-  const [icon, setIcon] = useState(isWudu ? 'favorite_border' : '')
+  const [icon, setIcon] = useState(isInstructional ? 'favorite_border' : '')
   const [iconUrl, setIconUrl] = useState<string | null>(null)
   const [repeatLabel, setRepeatLabel] = useState('')
   const [timeLabel, setTimeLabel] = useState('')
@@ -92,7 +102,7 @@ export function GuideStepFormSheet({ open, onOpenChange, guideSlug, item }: Prop
     setDescription(item?.description || legacy.description || '')
     setArabic(item?.arabic || legacy.arabic || '')
     setArabicEn(item?.arabic_en || legacy.arabic_en || '')
-    setIcon(item?.icon || legacy.icon || (isWudu ? 'favorite_border' : ''))
+    setIcon(item?.icon || legacy.icon || (isInstructional ? 'favorite_border' : ''))
     setIconUrl(item?.icon_url || legacy.icon_url || null)
     setRepeatLabel(item?.repeat_label || legacy.repeat_label || '')
     setTimeLabel(item?.time_label || legacy.time_label || '')
@@ -101,7 +111,7 @@ export function GuideStepFormSheet({ open, onOpenChange, guideSlug, item }: Prop
     setBody(!isRich ? (item?.body ?? '') : '')
     setPublished(item?.published ?? true)
     setSortOrder(item?.sort_order ?? 1)
-  }, [open, item, isRich, isWudu])
+  }, [open, item, isRich, isInstructional])
 
   async function uploadIcon(file: File) {
     setUploading(true)
@@ -151,13 +161,13 @@ export function GuideStepFormSheet({ open, onOpenChange, guideSlug, item }: Prop
     }
     const rich = {
       ...base,
-      subtitle: isWudu ? subtitle : '',
-      description: isWudu ? description : isPray ? '' : description || body,
+      subtitle: isInstructional ? subtitle : '',
+      description: isInstructional ? description : isPray ? '' : description || body,
       arabic: arabic || null,
-      arabic_en: isWudu ? arabicEn || null : null,
-      icon: isWudu ? icon : '',
-      icon_url: isWudu ? iconUrl : null,
-      repeat_label: isWudu ? repeatLabel || null : null,
+      arabic_en: isInstructional ? arabicEn || null : null,
+      icon: isInstructional ? icon : '',
+      icon_url: isInstructional ? iconUrl : null,
+      repeat_label: isInstructional ? repeatLabel || null : null,
       time_label: isPray ? timeLabel || null : null,
       rakaat: isPray ? rakaat : null,
       accent: isPray ? accent || null : null,
@@ -194,8 +204,8 @@ export function GuideStepFormSheet({ open, onOpenChange, guideSlug, item }: Prop
         <SheetHeader>
           <SheetTitle>{isNew ? 'Add guide step' : 'Edit guide step'}</SheetTitle>
           <SheetDescription>
-            {isWudu
-              ? 'Wudu step fields map 1:1 to the mobile guide. Sort order is the step number in the app.'
+            {isInstructional
+              ? 'Instructional step fields map 1:1 to the mobile guide. Sort order is the step number in the app. Prefer App Media for step images.'
               : isPray
                 ? 'Prayer card fields for the How to Pray screen. Sort order controls list order.'
                 : 'Shown in order on the mobile guide screen.'}
@@ -208,12 +218,12 @@ export function GuideStepFormSheet({ open, onOpenChange, guideSlug, item }: Prop
               id="step-title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder={isWudu ? 'Bismillah' : 'Step title'}
+              placeholder={isInstructional ? 'Intention' : 'Step title'}
               required
             />
           </div>
 
-          {isWudu && (
+          {isInstructional && (
             <>
               <div className="flex flex-col gap-2">
                 <Label htmlFor="step-subtitle">Subtitle</Label>
@@ -221,7 +231,7 @@ export function GuideStepFormSheet({ open, onOpenChange, guideSlug, item }: Prop
                   id="step-subtitle"
                   value={subtitle}
                   onChange={(e) => setSubtitle(e.target.value)}
-                  placeholder="Intention"
+                  placeholder="Niyyah"
                 />
               </div>
               <div className="flex flex-col gap-2">
@@ -231,7 +241,7 @@ export function GuideStepFormSheet({ open, onOpenChange, guideSlug, item }: Prop
                   rows={3}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Before Wudu: Make the intention…"
+                  placeholder="Stand facing the Qibla…"
                   required
                 />
               </div>
@@ -244,7 +254,7 @@ export function GuideStepFormSheet({ open, onOpenChange, guideSlug, item }: Prop
                   className="text-lg"
                   value={arabic}
                   onChange={(e) => setArabic(e.target.value)}
-                  placeholder="بِسۡمِ اللهِ"
+                  placeholder="ٱللَّهُ أَكْبَرُ"
                 />
               </div>
               <div className="flex flex-col gap-2">
@@ -254,7 +264,7 @@ export function GuideStepFormSheet({ open, onOpenChange, guideSlug, item }: Prop
                   rows={2}
                   value={arabicEn}
                   onChange={(e) => setArabicEn(e.target.value)}
-                  placeholder="Bismillah — In the name of Allah"
+                  placeholder="Allahu Akbar — Allah is the Greatest"
                 />
               </div>
               <div className="flex flex-col gap-2">
@@ -280,7 +290,7 @@ export function GuideStepFormSheet({ open, onOpenChange, guideSlug, item }: Prop
                     </option>
                   ))}
                 </select>
-                <p className="text-xs text-ink-subtle">Built-in Material icon. Upload below to override with a custom image.</p>
+                <p className="text-xs text-ink-subtle">Built-in Material icon. Upload step images in App Media for best results.</p>
               </div>
               <ImageUploadField
                 label="Custom icon (optional)"

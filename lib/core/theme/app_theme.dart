@@ -44,7 +44,7 @@ abstract final class AppTheme {
         primary: AppColors.navy,
         onPrimary: AppColors.white,
         secondary: AppColors.yellow,
-        onSecondary: AppColors.navy,
+        onSecondary: AppColors.onBrand,
         surface: AppColors.white,
         onSurface: AppColors.charcoal,
         error: AppColors.destructive,
@@ -75,7 +75,7 @@ abstract final class AppTheme {
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.yellow,
-          foregroundColor: AppColors.navy,
+          foregroundColor: AppColors.onBrand,
           minimumSize: const Size.fromHeight(52),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(radiusButton),
@@ -104,7 +104,7 @@ abstract final class AppTheme {
       scaffoldBackgroundColor: AppColors.darkBg,
       colorScheme: const ColorScheme.dark(
         primary: AppColors.yellow,
-        onPrimary: AppColors.navy,
+        onPrimary: AppColors.onBrand,
         secondary: AppColors.yellow,
         surface: AppColors.darkCard,
         onSurface: AppColors.darkText,
@@ -135,7 +135,7 @@ abstract final class AppTheme {
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.yellow,
-          foregroundColor: AppColors.navy,
+          foregroundColor: AppColors.onBrand,
           minimumSize: const Size.fromHeight(52),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(radiusButton),

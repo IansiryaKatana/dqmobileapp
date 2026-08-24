@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../core/constants/app_assets.dart';
+import '../../core/services/app_media_repository.dart';
 import '../../core/services/guide_repository.dart';
 import '../../core/services/guide_service.dart';
 import '../../core/theme/app_colors.dart';
@@ -12,8 +14,8 @@ import '../../core/theme/app_theme.dart';
 import '../../core/theme/dq_theme.dart';
 import '../../shared/widgets/dq_buttons.dart';
 
-class _WuduStep {
-  const _WuduStep({
+class GuideFlowStep {
+  const GuideFlowStep({
     required this.n,
     required this.title,
     required this.subtitle,
@@ -36,8 +38,10 @@ class _WuduStep {
   final String? iconUrl;
 }
 
-const _fallbackSteps = [
-  _WuduStep(
+typedef GuideSlotResolver = String Function({required int stepNumber, required String title});
+
+const _wuduFallbackSteps = [
+  GuideFlowStep(
     n: 1,
     title: 'Bismillah',
     subtitle: 'Intention',
@@ -46,7 +50,7 @@ const _fallbackSteps = [
     arabicEn: 'Bismillah — In the name of Allah',
     icon: Icons.favorite_border_rounded,
   ),
-  _WuduStep(
+  GuideFlowStep(
     n: 2,
     title: 'Hands',
     subtitle: 'Wash both hands',
@@ -54,7 +58,7 @@ const _fallbackSteps = [
     desc: 'Completely wash both hands, including the wrists and between the fingers.',
     icon: Icons.back_hand_outlined,
   ),
-  _WuduStep(
+  GuideFlowStep(
     n: 3,
     title: 'Mouth',
     subtitle: 'Rinse the mouth',
@@ -62,7 +66,7 @@ const _fallbackSteps = [
     desc: 'Using the right hand, put a small amount of water into the mouth, swirl it around, then expel.',
     icon: Icons.water_drop_outlined,
   ),
-  _WuduStep(
+  GuideFlowStep(
     n: 4,
     title: 'Nose',
     subtitle: 'Rinse the nostrils',
@@ -70,7 +74,7 @@ const _fallbackSteps = [
     desc: 'Sniff water into the nostrils as far as possible with the right hand, then blow it out using the left hand.',
     icon: Icons.air_outlined,
   ),
-  _WuduStep(
+  GuideFlowStep(
     n: 5,
     title: 'Face',
     subtitle: 'Wash the full face',
@@ -78,7 +82,7 @@ const _fallbackSteps = [
     desc: 'Wash the face from the hairline to the chin, and from earlobe to earlobe — the entire face must be covered.',
     icon: Icons.face_outlined,
   ),
-  _WuduStep(
+  GuideFlowStep(
     n: 6,
     title: 'Arms',
     subtitle: 'Wash to the elbows',
@@ -86,21 +90,21 @@ const _fallbackSteps = [
     desc: 'Wash both arms to and including the elbows, including between the fingers. Begin with the right arm.',
     icon: Icons.pan_tool_alt_outlined,
   ),
-  _WuduStep(
+  GuideFlowStep(
     n: 7,
     title: 'Head',
     subtitle: 'Wipe the head',
     desc: 'Wipe the head with wet fingers, starting at the fringe to the back hairline and back again — all in one movement.',
     icon: Icons.self_improvement_outlined,
   ),
-  _WuduStep(
+  GuideFlowStep(
     n: 8,
     title: 'Ears',
     subtitle: 'Wipe both ears',
     desc: 'Simultaneously wipe the insides of both ears with the index fingers and the back of the ears with the thumbs.',
     icon: Icons.hearing_outlined,
   ),
-  _WuduStep(
+  GuideFlowStep(
     n: 9,
     title: 'Feet',
     subtitle: 'Wash to the ankles',
@@ -108,7 +112,7 @@ const _fallbackSteps = [
     desc: 'Wash both feet including the ankles and between the toes. Begin with the right foot.',
     icon: Icons.directions_walk_outlined,
   ),
-  _WuduStep(
+  GuideFlowStep(
     n: 10,
     title: "Closing Du'a",
     subtitle: 'Invocation',
@@ -120,7 +124,109 @@ const _fallbackSteps = [
   ),
 ];
 
-IconData _wuduIcon(String? key) {
+List<GuideFlowStep> prayFallbackSteps({required String name, required int rakaat}) {
+  return [
+    GuideFlowStep(
+      n: 1,
+      title: 'Intention',
+      subtitle: 'Niyyah',
+      desc: 'Stand facing the Qibla. Make the intention in your heart to pray $name ($rakaat rakʿah) for the sake of Allah.',
+      icon: Icons.favorite_border_rounded,
+    ),
+    GuideFlowStep(
+      n: 2,
+      title: 'Takbir',
+      subtitle: 'Opening takbir',
+      desc: 'Raise both hands to the ears (or shoulders) and say Allahu Akbar to begin the prayer.',
+      arabic: 'ٱللَّهُ أَكْبَرُ',
+      arabicEn: 'Allahu Akbar — Allah is the Greatest',
+      icon: Icons.pan_tool_alt_outlined,
+    ),
+    GuideFlowStep(
+      n: 3,
+      title: 'Qiyam',
+      subtitle: 'Standing · Al-Fatihah',
+      repeat: 'Each rakʿah',
+      desc:
+          'Stand calmly with the right hand over the left. Recite Al-Fatihah, then another short surah. Do this in every rakʿah of $name.',
+      arabic: 'بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ',
+      arabicEn: 'Begin with Al-Fatihah, then a short surah',
+      icon: Icons.menu_book_outlined,
+    ),
+    GuideFlowStep(
+      n: 4,
+      title: 'Ruku',
+      subtitle: 'Bowing',
+      repeat: '× 3',
+      desc: 'Say Allahu Akbar, then bow with the back straight and hands on the knees. Glorify Allah three times.',
+      arabic: 'سُبْحَانَ رَبِّيَ ٱلْعَظِيمِ',
+      arabicEn: 'Subhana Rabbiyal Azeem — Glory be to my Lord, the Most Great',
+      icon: Icons.self_improvement_outlined,
+    ),
+    GuideFlowStep(
+      n: 5,
+      title: "I'tidal",
+      subtitle: 'Standing after ruku',
+      desc: 'Rise from ruku, then stand upright. Say Sami Allahu liman hamidah, then Rabbana wa lakal hamd.',
+      arabic: 'سَمِعَ ٱللَّهُ لِمَنْ حَمِدَهُ',
+      arabicEn: 'Sami Allahu liman hamidah — Allah hears those who praise Him',
+      icon: Icons.accessibility_new_outlined,
+    ),
+    GuideFlowStep(
+      n: 6,
+      title: 'Sujud',
+      subtitle: 'Prostration',
+      repeat: '× 3',
+      desc:
+          'Say Allahu Akbar and go into prostration: forehead, nose, palms, knees, and toes on the ground. Glorify Allah three times.',
+      arabic: 'سُبْحَانَ رَبِّيَ ٱلْأَعْلَىٰ',
+      arabicEn: "Subhana Rabbiyal A'la — Glory be to my Lord, the Most High",
+      icon: Icons.expand_outlined,
+    ),
+    GuideFlowStep(
+      n: 7,
+      title: 'Jalsa',
+      subtitle: 'Sitting between sujud',
+      desc: 'Say Allahu Akbar and sit briefly between the two prostrations. Ask Allah for forgiveness.',
+      arabic: 'رَبِّ ٱغْفِرْ لِي',
+      arabicEn: 'Rabbighfir li — My Lord, forgive me',
+      icon: Icons.airline_seat_recline_normal,
+    ),
+    GuideFlowStep(
+      n: 8,
+      title: 'Second Sujud',
+      subtitle: 'Complete the rakʿah',
+      repeat: '× 3',
+      desc:
+          'Say Allahu Akbar and prostrate a second time. This completes one rakʿah. Stand for the next rakʿah until you finish all $rakaat for $name.',
+      arabic: 'سُبْحَانَ رَبِّيَ ٱلْأَعْلَىٰ',
+      arabicEn: "Subhana Rabbiyal A'la — Glory be to my Lord, the Most High",
+      icon: Icons.expand_outlined,
+    ),
+    GuideFlowStep(
+      n: 9,
+      title: 'Tashahhud',
+      subtitle: 'Final sitting',
+      desc:
+          'In the last rakʿah of $name, remain seated after the second sujud. Recite the tashahhud (and salawat on the Prophet ﷺ).',
+      arabic: 'ٱلتَّحِيَّاتُ لِلَّهِ',
+      arabicEn: 'At-tahiyyatu lillah… (the tashahhud)',
+      icon: Icons.volunteer_activism_outlined,
+    ),
+    GuideFlowStep(
+      n: 10,
+      title: 'Salam',
+      subtitle: 'Ending the prayer',
+      repeat: 'Right, then left',
+      desc: 'Turn the head to the right, then to the left, saying the salam each time. Your $name prayer is complete.',
+      arabic: 'ٱلسَّلَامُ عَلَيْكُمْ وَرَحْمَةُ ٱللَّهِ',
+      arabicEn: 'As-salamu alaykum wa rahmatullah',
+      icon: Icons.waving_hand_outlined,
+    ),
+  ];
+}
+
+IconData _guideIcon(String? key) {
   return switch (key) {
     'favorite_border' => Icons.favorite_border_rounded,
     'back_hand' => Icons.back_hand_outlined,
@@ -132,13 +238,19 @@ IconData _wuduIcon(String? key) {
     'hearing' => Icons.hearing_outlined,
     'directions_walk' => Icons.directions_walk_outlined,
     'check_circle' => Icons.check_circle_outline_rounded,
-    _ => Icons.water_drop_outlined,
+    'menu_book' => Icons.menu_book_outlined,
+    'accessibility_new' => Icons.accessibility_new_outlined,
+    'expand' => Icons.expand_outlined,
+    'airline_seat_recline_normal' => Icons.airline_seat_recline_normal,
+    'volunteer_activism' => Icons.volunteer_activism_outlined,
+    'waving_hand' => Icons.waving_hand_outlined,
+    _ => Icons.self_improvement_outlined,
   };
 }
 
-List<_WuduStep> _stepsFromCms(List<GuideStep> rows) {
-  if (rows.isEmpty) return _fallbackSteps;
-  final out = <_WuduStep>[];
+List<GuideFlowStep> _stepsFromCms(List<GuideStep> rows, List<GuideFlowStep> fallback) {
+  if (rows.isEmpty) return fallback;
+  final out = <GuideFlowStep>[];
   for (var i = 0; i < rows.length; i++) {
     final row = rows[i];
     Map<String, dynamic>? meta;
@@ -158,12 +270,10 @@ List<_WuduStep> _stepsFromCms(List<GuideStep> rows) {
     final arabicEn = (row.arabicEn?.isNotEmpty == true) ? row.arabicEn : meta?['arabic_en'] as String?;
     final repeat = (row.repeatLabel?.isNotEmpty == true) ? row.repeatLabel : meta?['repeat'] as String?;
     final iconKey = row.icon.isNotEmpty ? row.icon : meta?['icon'] as String?;
-    final iconUrl = (row.iconUrl?.isNotEmpty == true)
-        ? row.iconUrl
-        : meta?['icon_url'] as String?;
+    final iconUrl = (row.iconUrl?.isNotEmpty == true) ? row.iconUrl : meta?['icon_url'] as String?;
     final stepNumber = row.sortOrder > 0 ? row.sortOrder : i + 1;
     out.add(
-      _WuduStep(
+      GuideFlowStep(
         n: stepNumber,
         title: row.title,
         subtitle: subtitle,
@@ -171,29 +281,47 @@ List<_WuduStep> _stepsFromCms(List<GuideStep> rows) {
         desc: desc,
         arabic: arabic,
         arabicEn: arabicEn,
-        icon: _wuduIcon(iconKey),
+        icon: _guideIcon(iconKey),
         iconUrl: iconUrl,
       ),
     );
   }
-  return out.isEmpty ? _fallbackSteps : out;
+  return out.isEmpty ? fallback : out;
 }
 
-class WuduGuideScreen extends ConsumerStatefulWidget {
-  const WuduGuideScreen({super.key});
+/// Shared step-by-step guide UI (Wudu + daily prayers).
+class StepGuideScreen extends ConsumerStatefulWidget {
+  const StepGuideScreen({
+    super.key,
+    required this.guideSlug,
+    required this.mediaPageKey,
+    required this.slotFor,
+    required this.fallbackSteps,
+    required this.defaultTitle,
+    required this.defaultSubtitle,
+    this.bundledFallbackForSlot,
+  });
+
+  final String guideSlug;
+  final String mediaPageKey;
+  final GuideSlotResolver slotFor;
+  final List<GuideFlowStep> fallbackSteps;
+  final String defaultTitle;
+  final String defaultSubtitle;
+  final String? Function(String slotKey)? bundledFallbackForSlot;
 
   @override
-  ConsumerState<WuduGuideScreen> createState() => _WuduGuideScreenState();
+  ConsumerState<StepGuideScreen> createState() => _StepGuideScreenState();
 }
 
-class _WuduGuideScreenState extends ConsumerState<WuduGuideScreen> {
+class _StepGuideScreenState extends ConsumerState<StepGuideScreen> {
   int _stepIdx = 0;
 
   @override
   Widget build(BuildContext context) {
-    final stepsAsync = ref.watch(guideStepsProvider('wudu'));
-    final sectionAsync = ref.watch(guideSectionProvider('wudu'));
-    final steps = _stepsFromCms(stepsAsync.valueOrNull ?? const []);
+    final stepsAsync = ref.watch(guideStepsProvider(widget.guideSlug));
+    final sectionAsync = ref.watch(guideSectionProvider(widget.guideSlug));
+    final steps = _stepsFromCms(stepsAsync.valueOrNull ?? const [], widget.fallbackSteps);
     final section = sectionAsync.valueOrNull;
     final safeIdx = _stepIdx.clamp(0, steps.length - 1);
     if (safeIdx != _stepIdx) {
@@ -205,8 +333,8 @@ class _WuduGuideScreenState extends ConsumerState<WuduGuideScreen> {
     final isFirst = safeIdx == 0;
     final isLast = safeIdx == steps.length - 1;
     final progress = (safeIdx + 1) / steps.length;
-    final title = section?.title.isNotEmpty == true ? section!.title : 'Wudu Guide';
-    final subtitle = section?.subtitle.isNotEmpty == true ? section!.subtitle : 'How to make ablution';
+    final title = section?.title.isNotEmpty == true ? section!.title : widget.defaultTitle;
+    final subtitle = section?.subtitle.isNotEmpty == true ? section!.subtitle : widget.defaultSubtitle;
 
     final colors = context.colors;
     final dq = context.dq;
@@ -271,14 +399,12 @@ class _WuduGuideScreenState extends ConsumerState<WuduGuideScreen> {
                       border: Border.all(color: dq.cardBorder),
                     ),
                     clipBehavior: Clip.antiAlias,
-                    child: step.iconUrl != null && step.iconUrl!.isNotEmpty
-                        ? Image.network(
-                            step.iconUrl!,
-                            fit: BoxFit.contain,
-                            errorBuilder: (context, error, stackTrace) =>
-                                Icon(step.icon, size: 72, color: colors.onSurface.withValues(alpha: 0.35)),
-                          )
-                        : Icon(step.icon, size: 72, color: colors.onSurface.withValues(alpha: 0.35)),
+                    child: _GuideStepArt(
+                      step: step,
+                      mediaPageKey: widget.mediaPageKey,
+                      slotFor: widget.slotFor,
+                      bundledFallbackForSlot: widget.bundledFallbackForSlot,
+                    ),
                   ),
                   const SizedBox(height: 16),
                   Row(
@@ -406,6 +532,102 @@ class _WuduGuideScreenState extends ConsumerState<WuduGuideScreen> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _GuideStepArt extends ConsumerWidget {
+  const _GuideStepArt({
+    required this.step,
+    required this.mediaPageKey,
+    required this.slotFor,
+    this.bundledFallbackForSlot,
+  });
+
+  final GuideFlowStep step;
+  final String mediaPageKey;
+  final GuideSlotResolver slotFor;
+  final String? Function(String slotKey)? bundledFallbackForSlot;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final slotKey = slotFor(stepNumber: step.n, title: step.title);
+    final map = ref.watch(appMediaMapProvider).valueOrNull;
+    final slot = map?['$mediaPageKey.$slotKey'];
+    final cmsUrl = slot?.url;
+    final url = (cmsUrl != null && cmsUrl.isNotEmpty)
+        ? cmsUrl
+        : (step.iconUrl != null && step.iconUrl!.isNotEmpty ? step.iconUrl : null);
+    final asset = slot?.fallbackAsset ?? bundledFallbackForSlot?.call(slotKey);
+    final icon = Icon(step.icon, size: 72, color: context.colors.onSurface.withValues(alpha: 0.35));
+
+    if (url != null) {
+      return Image.network(
+        url,
+        fit: BoxFit.contain,
+        width: double.infinity,
+        height: double.infinity,
+        errorBuilder: (_, __, ___) => _bundledOrIcon(asset, icon),
+      );
+    }
+    return _bundledOrIcon(asset, icon);
+  }
+
+  Widget _bundledOrIcon(String? asset, Widget icon) {
+    if (asset == null || asset.isEmpty) return Center(child: icon);
+    return Image.asset(
+      asset,
+      fit: BoxFit.contain,
+      width: double.infinity,
+      height: double.infinity,
+      errorBuilder: (_, __, ___) => Center(child: icon),
+    );
+  }
+}
+
+class WuduGuideScreen extends StatelessWidget {
+  const WuduGuideScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return StepGuideScreen(
+      guideSlug: 'wudu',
+      mediaPageKey: 'wudu',
+      slotFor: AppAssets.wuduSlotFor,
+      fallbackSteps: _wuduFallbackSteps,
+      defaultTitle: 'Wudu Guide',
+      defaultSubtitle: 'How to make ablution',
+      bundledFallbackForSlot: (slot) => slot == 'bismillah' ? AppAssets.wuduBismillah : null,
+    );
+  }
+}
+
+class PrayerGuideScreen extends StatelessWidget {
+  const PrayerGuideScreen({super.key, required this.prayerKey});
+
+  /// Short key: fajr | dhuhr | asr | maghrib | isha
+  final String prayerKey;
+
+  static const _meta = {
+    'fajr': (name: 'Fajr', rakaat: 2, arabic: 'الفجر'),
+    'dhuhr': (name: 'Dhuhr', rakaat: 4, arabic: 'الظهر'),
+    'asr': (name: 'Asr', rakaat: 4, arabic: 'العصر'),
+    'maghrib': (name: 'Maghrib', rakaat: 3, arabic: 'المغرب'),
+    'isha': (name: 'Isha', rakaat: 4, arabic: 'العشاء'),
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final key = prayerKey.toLowerCase();
+    final meta = _meta[key] ?? _meta['fajr']!;
+    final guideSlug = AppAssets.prayGuideSlugs[key] ?? 'pray-fajr';
+    return StepGuideScreen(
+      guideSlug: guideSlug,
+      mediaPageKey: guideSlug,
+      slotFor: AppAssets.praySlotFor,
+      fallbackSteps: prayFallbackSteps(name: meta.name, rakaat: meta.rakaat),
+      defaultTitle: meta.name,
+      defaultSubtitle: 'How to pray ${meta.name} · ${meta.rakaat} rakʿah',
     );
   }
 }

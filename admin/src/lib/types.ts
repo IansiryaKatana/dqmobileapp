@@ -104,9 +104,50 @@ export type HomeCampaignSettings = {
   link?: string
 }
 
+export type DonateImpactCard = {
+  label: string
+  amount_label: string
+}
+
 export type DonateCopySettings = {
   tagline: string
   guest_message: string
+  hero_title?: string
+  hero_subtitle?: string
+  impact_cards?: DonateImpactCard[]
+  checkout_store_note?: string
+  monthly_renew_note?: string
+  success_title?: string
+  success_subtitle?: string
+}
+
+export type LegalDocumentsSettings = {
+  privacy_md: string
+  terms_md: string
+  support_md: string
+}
+
+export type OnboardingSettings = {
+  brand: string
+  intro_title: string
+  intro_subtitle: string
+  intro_cta: string
+  why_title: string
+  why_subtitle: string
+  skip_label: string
+  create_account_cta: string
+  sign_in_cta: string
+}
+
+export type PermissionsSettings = {
+  title: string
+  subtitle: string
+  notifications_title: string
+  notifications_description: string
+  location_title: string
+  location_description: string
+  continue_label: string
+  skip_label: string
 }
 
 export type OrderCatalogProduct = {

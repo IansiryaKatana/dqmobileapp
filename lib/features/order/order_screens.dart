@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -6,8 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/models/checkout_args.dart';
 import '../../core/providers/app_state_provider.dart';
 import '../../core/services/content_repository.dart';
-import '../../core/services/order_repository.dart';
-import '../../core/services/purchase_service.dart';
+import '../../core/services/postage_payment_service.dart';
 import '../../core/services/user_data_repository.dart';
 import '../../core/constants/app_assets.dart';
 import '../../core/services/app_media_repository.dart';
@@ -113,7 +111,7 @@ class OrderScreen extends ConsumerWidget {
               borderRadius: BorderRadius.circular(16),
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                child: Text(cta, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.navy)),
+                child: Text(cta, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.onBrand)),
               ),
             ),
           ),
@@ -247,25 +245,15 @@ class _OrderCheckoutScreenState extends ConsumerState<OrderCheckoutScreen> {
     setState(() => _loading = true);
     try {
       final user = ref.read(appStateProvider).user;
-      final postage = ref.read(postageCopyProvider).valueOrNull ?? PostageCopy.fallback;
-      // Gate order insert on successful postage charge when RC is configured.
-      final paid = await PurchaseService.processPostagePayment();
-      if (!paid && kReleaseMode) {
-        throw Exception('Postage payment was not completed. Please try again.');
-      }
-      final reference = await ref.read(orderRepositoryProvider).createOrder(
-            title: widget.title,
-            quantity: widget.quantity,
-            language: widget.language,
-            userId: user?.id,
-            postagePence: postage.displayPence,
-            status: paid ? 'paid' : 'pending',
-            address: {
-              'line1': _address.text.trim(),
-              'city': _city.text.trim(),
-              'postcode': _postcode.text.trim(),
-            },
-          );
+      final reference = await PostagePaymentService.payAndCreateOrder(
+        title: widget.title,
+        quantity: widget.quantity,
+        language: widget.language,
+        userId: user?.id,
+        line1: _address.text.trim(),
+        city: _city.text.trim(),
+        postcode: _postcode.text.trim(),
+      );
       if (user?.id != null) {
         await ref.read(userDataRepositoryProvider).saveAddress(
               userId: user!.id!,
@@ -321,6 +309,21 @@ class _OrderCheckoutScreenState extends ConsumerState<OrderCheckoutScreen> {
                               const Text('Total', style: TextStyle(fontWeight: FontWeight.bold)),
                               Text(label, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.yellow)),
                             ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    DqCard(
+                      child: Row(
+                        children: [
+                          const Icon(Icons.lock_outline, color: AppColors.yellow),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'Postage is paid securely with Stripe (not the App Store / Play Store).',
+                              style: TextStyle(fontSize: 13, color: context.dq.muted),
+                            ),
                           ),
                         ],
                       ),

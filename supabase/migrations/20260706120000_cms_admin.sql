@@ -156,6 +156,6 @@ INSERT INTO public.quran_topics (name, description, surah_numbers, sort_order) V
 
 INSERT INTO public.app_settings (key, value, description) VALUES
   ('revenuecat', '{"offering_id":"default","monthly_package_id":"monthly","note":"API keys are set in mobile CI env only — not stored here."}', 'RevenueCat offering configuration (no secrets)'),
-  ('home_campaign', '{"title":"Support Quran Printing","subtitle":"View our impact report","link":"https://donatequran.org/impact"}', 'Home screen campaign card'),
+  ('home_campaign', '{"title":"Support Quran Printing","subtitle":"View our impact report","link":"https://donatequran.com/impact"}', 'Home screen campaign card'),
   ('donate_copy', '{"tagline":"100% of public donations go towards Quran printing.","guest_message":"No account needed — donate as a guest."}', 'Donate screen copy')
 ON CONFLICT (key) DO NOTHING;

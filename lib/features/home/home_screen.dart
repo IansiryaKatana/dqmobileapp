@@ -180,9 +180,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Text('Open', style: TextStyle(color: AppColors.navy, fontSize: 12, fontWeight: FontWeight.w600)),
+                                Text('Open', style: TextStyle(color: AppColors.onBrand, fontSize: 12, fontWeight: FontWeight.w600)),
                                 SizedBox(width: 2),
-                                Icon(Icons.chevron_right, size: 14, color: AppColors.navy),
+                                Icon(Icons.chevron_right, size: 14, color: AppColors.onBrand),
                               ],
                             ),
                           ),

@@ -80,7 +80,7 @@ class DqFeaturedGuideCard extends StatelessWidget {
                 width: 36,
                 height: 36,
                 decoration: const BoxDecoration(color: AppColors.yellow, shape: BoxShape.circle),
-                child: const Icon(Icons.chevron_right, size: 18, color: AppColors.navy),
+                child: const Icon(Icons.chevron_right, size: 18, color: AppColors.onBrand),
               ),
             ],
           ),

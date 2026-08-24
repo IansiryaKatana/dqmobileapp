@@ -71,10 +71,10 @@ INSERT INTO public.app_settings (key, value, description) VALUES
   (
     'external_links',
     '{
-      "privacy": "https://donatequran.org/privacy",
-      "terms": "https://donatequran.org/terms",
-      "distributor": "https://donatequran.org/distributor",
-      "support": "https://donatequran.org/support"
+      "privacy": "https://donatequran.com/privacy",
+      "terms": "https://donatequran.com/terms",
+      "distributor": "https://donatequran.com/distributor",
+      "support": "https://donatequran.com/support"
     }'::jsonb,
     'External web URLs opened from More / account menu'
   ),

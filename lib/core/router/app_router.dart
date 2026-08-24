@@ -22,6 +22,7 @@ import '../../features/quran/quran_screens.dart';
 import '../../features/splash/splash_screen.dart';
 import '../../shared/widgets/dq_bottom_nav.dart';
 import '../../shared/widgets/dq_web_screen.dart';
+import '../../shared/widgets/legal_document_screen.dart';
 import '../models/checkout_args.dart';
 import '../services/content_repository.dart';
 
@@ -262,14 +263,27 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/wudu-guide', parentNavigatorKey: _rootNavigatorKey, builder: (_, __) => const WuduGuideScreen()),
       GoRoute(path: '/how-to-pray', parentNavigatorKey: _rootNavigatorKey, builder: (_, __) => const HowToPrayScreen()),
       GoRoute(
+        path: '/pray-guide/:slug',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (_, state) => PrayerGuideScreen(prayerKey: state.pathParameters['slug'] ?? 'fajr'),
+      ),
+      GoRoute(
         path: '/privacy',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (_, __) => const _CmsWebLinkScreen(title: 'Privacy Policy', linkKey: 'privacy'),
+        builder: (_, __) => const LegalDocumentScreen(
+          title: 'Privacy Policy',
+          assetPath: 'store/privacy_policy.md',
+          linkKey: 'privacy',
+        ),
       ),
       GoRoute(
         path: '/terms',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (_, __) => const _CmsWebLinkScreen(title: 'Terms & Conditions', linkKey: 'terms'),
+        builder: (_, __) => const LegalDocumentScreen(
+          title: 'Terms & Conditions',
+          assetPath: 'store/terms.md',
+          linkKey: 'terms',
+        ),
       ),
       GoRoute(
         path: '/distributor',
@@ -279,7 +293,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/support',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (_, __) => const _CmsWebLinkScreen(title: 'Support', linkKey: 'support'),
+        builder: (_, __) => const LegalDocumentScreen(
+          title: 'Support',
+          assetPath: 'store/support.md',
+          linkKey: 'support',
+        ),
       ),
     ],
   );

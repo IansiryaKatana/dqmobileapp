@@ -14,11 +14,15 @@ import type {
   AboutSettings,
   AppSetting,
   DonateCopySettings,
+  DonateImpactCard,
   DonationEmailCopySettings,
   ExternalLinksSettings,
   HomeCampaignSettings,
   ImpactOverridesSettings,
+  LegalDocumentsSettings,
+  OnboardingSettings,
   OrderCatalogSettings,
+  PermissionsSettings,
   PostageSettings,
 } from '@/lib/types'
 
@@ -30,15 +34,72 @@ const emptyCatalog: OrderCatalogSettings = {
   products: [],
 }
 
+const defaultImpactCards: DonateImpactCard[] = [
+  { label: 'Sponsor 1 Quran', amount_label: '£5' },
+  { label: 'Sponsor 5 Qurans', amount_label: '£25' },
+  { label: 'Sponsor 10 Qurans', amount_label: '£50' },
+  { label: 'Sponsor a Box', amount_label: '£250' },
+]
+
+const defaultDonate: DonateCopySettings = {
+  tagline: '',
+  guest_message: '',
+  hero_title: 'Fund Quran printing today',
+  hero_subtitle: 'Every £5 funds one Quran copy.',
+  impact_cards: defaultImpactCards,
+  checkout_store_note:
+    'Payment uses the App Store / Play Store checkout via RevenueCat. Supported amounts: £5, £10, £25, £50, £100.',
+  monthly_renew_note:
+    'Monthly donations auto-renew at {{amount}} until you cancel in your Apple ID or Google Play subscription settings. Restore purchases from Profile if a receipt is missing.',
+  success_title: 'May Allah reward you',
+  success_subtitle: 'Your donation of {{amount}} has been received.',
+}
+
+const defaultOnboarding: OnboardingSettings = {
+  brand: 'Donate Quran',
+  intro_title: 'Give the gift\nof Quran',
+  intro_subtitle: 'Donate, order, read and share the Quran\nthrough one trusted app.',
+  intro_cta: 'GET STARTED',
+  why_title: 'Why\nDonate Quran?',
+  why_subtitle:
+    'Your donation helps provide free Qurans to those who need them most. Together, we can spread the message and bring guidance to every heart.',
+  skip_label: 'Skip',
+  create_account_cta: 'Create Account',
+  sign_in_cta: 'Sign In',
+}
+
+const defaultPermissions: PermissionsSettings = {
+  title: 'Allow permissions',
+  subtitle:
+    'Enable notifications and location for the best experience — order updates, donation receipts, and accurate Qibla direction.',
+  notifications_title: 'Notifications',
+  notifications_description: 'Order updates, donation confirmations, and scholar replies.',
+  location_title: 'Location',
+  location_description: 'Used for Qibla direction and prayer times near you.',
+  continue_label: 'Continue to app',
+  skip_label: 'Not now',
+}
+
+const emptyLegal: LegalDocumentsSettings = {
+  privacy_md: '',
+  terms_md: '',
+  support_md: '',
+}
+
 export function SettingsPage() {
   const queryClient = useQueryClient()
   const [home, setHome] = useState<HomeCampaignSettings>({ title: '', subtitle: '', link: '' })
   const [notifyHomeCampaign, setNotifyHomeCampaign] = useState(false)
-  const [donate, setDonate] = useState<DonateCopySettings>({ tagline: '', guest_message: '' })
+  const [donate, setDonate] = useState<DonateCopySettings>(defaultDonate)
+  const [impactCardsJson, setImpactCardsJson] = useState(JSON.stringify(defaultImpactCards, null, 2))
+  const [onboarding, setOnboarding] = useState<OnboardingSettings>(defaultOnboarding)
+  const [permissions, setPermissions] = useState<PermissionsSettings>(defaultPermissions)
+  const [legal, setLegal] = useState<LegalDocumentsSettings>(emptyLegal)
+  const [logisticsJson, setLogisticsJson] = useState('{\n  "groups": []\n}')
   const [catalog, setCatalog] = useState<OrderCatalogSettings>(emptyCatalog)
   const [catalogJson, setCatalogJson] = useState('')
   const [postage, setPostage] = useState<PostageSettings>({
-    product_id: 'dq_postage_399',
+    product_id: 'stripe_postage_399',
     display_pence: 399,
     display_label: '£3.99',
   })
@@ -57,7 +118,7 @@ export function SettingsPage() {
   const [emailCopy, setEmailCopy] = useState<DonationEmailCopySettings>({
     subject_template: 'Donation receipt {{receipt_id}}',
     intro: 'Your gift of {{amount}} helps print and distribute Qurans.',
-    footer: '100% of public donations go towards Quran printing.',
+    footer: 'Donations fund Quran printing. Store processing fees may apply; the remainder goes to printing.',
   })
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [homeJson, setHomeJson] = useState('')
@@ -86,7 +147,19 @@ export function SettingsPage() {
     }
     if (donateRow) {
       const v = donateRow.value as DonateCopySettings
-      setDonate({ tagline: v.tagline ?? '', guest_message: v.guest_message ?? '' })
+      const cards = Array.isArray(v.impact_cards) && v.impact_cards.length > 0 ? v.impact_cards : defaultImpactCards
+      setDonate({
+        tagline: v.tagline ?? '',
+        guest_message: v.guest_message ?? '',
+        hero_title: v.hero_title ?? defaultDonate.hero_title,
+        hero_subtitle: v.hero_subtitle ?? defaultDonate.hero_subtitle,
+        impact_cards: cards,
+        checkout_store_note: v.checkout_store_note ?? defaultDonate.checkout_store_note,
+        monthly_renew_note: v.monthly_renew_note ?? defaultDonate.monthly_renew_note,
+        success_title: v.success_title ?? defaultDonate.success_title,
+        success_subtitle: v.success_subtitle ?? defaultDonate.success_subtitle,
+      })
+      setImpactCardsJson(JSON.stringify(cards, null, 2))
       setDonateJson(JSON.stringify(donateRow.value, null, 2))
     }
 
@@ -105,7 +178,7 @@ export function SettingsPage() {
     const post = pick('postage') as PostageSettings | undefined
     if (post) {
       setPostage({
-        product_id: post.product_id ?? 'dq_postage_399',
+        product_id: post.product_id ?? 'stripe_postage_399',
         display_pence: Number(post.display_pence) || 399,
         display_label: post.display_label ?? '£3.99',
       })
@@ -142,6 +215,30 @@ export function SettingsPage() {
         intro: em.intro ?? '',
         footer: em.footer ?? '',
       })
+    }
+
+    const legalVal = pick('legal_documents') as LegalDocumentsSettings | undefined
+    if (legalVal) {
+      setLegal({
+        privacy_md: legalVal.privacy_md ?? '',
+        terms_md: legalVal.terms_md ?? '',
+        support_md: legalVal.support_md ?? '',
+      })
+    }
+
+    const onboardVal = pick('onboarding') as OnboardingSettings | undefined
+    if (onboardVal) {
+      setOnboarding({ ...defaultOnboarding, ...onboardVal })
+    }
+
+    const permVal = pick('permissions') as PermissionsSettings | undefined
+    if (permVal) {
+      setPermissions({ ...defaultPermissions, ...permVal })
+    }
+
+    const logisticsVal = pick('logistics')
+    if (logisticsVal) {
+      setLogisticsJson(JSON.stringify(logisticsVal, null, 2))
     }
   }, [data])
 
@@ -196,10 +293,50 @@ export function SettingsPage() {
 
   function onSaveDonate(e: FormEvent) {
     e.preventDefault()
+    let impactCards = donate.impact_cards ?? defaultImpactCards
+    try {
+      const parsed = JSON.parse(impactCardsJson) as DonateImpactCard[]
+      if (Array.isArray(parsed)) impactCards = parsed
+    } catch {
+      toast.error('Impact cards JSON is invalid')
+      return
+    }
     void upsert('donate_copy', {
       tagline: donate.tagline,
       guest_message: donate.guest_message,
+      hero_title: donate.hero_title,
+      hero_subtitle: donate.hero_subtitle,
+      impact_cards: impactCards,
+      checkout_store_note: donate.checkout_store_note,
+      monthly_renew_note: donate.monthly_renew_note,
+      success_title: donate.success_title,
+      success_subtitle: donate.success_subtitle,
     })
+  }
+
+  function onSaveLegal(e: FormEvent) {
+    e.preventDefault()
+    void upsert('legal_documents', { ...legal })
+  }
+
+  function onSaveOnboarding(e: FormEvent) {
+    e.preventDefault()
+    void upsert('onboarding', { ...onboarding })
+  }
+
+  function onSavePermissions(e: FormEvent) {
+    e.preventDefault()
+    void upsert('permissions', { ...permissions })
+  }
+
+  function onSaveLogistics(e: FormEvent) {
+    e.preventDefault()
+    try {
+      const value = JSON.parse(logisticsJson) as Record<string, unknown>
+      void upsert('logistics', value)
+    } catch {
+      toast.error('Logistics JSON is invalid')
+    }
   }
 
   function onSaveCatalog(e: FormEvent) {
@@ -224,7 +361,7 @@ export function SettingsPage() {
   function onSavePostage(e: FormEvent) {
     e.preventDefault()
     void upsert('postage', {
-      product_id: postage.product_id.trim() || 'dq_postage_399',
+      product_id: postage.product_id.trim() || 'stripe_postage_399',
       display_pence: Number(postage.display_pence) || 399,
       display_label: postage.display_label,
     })
@@ -350,7 +487,29 @@ export function SettingsPage() {
       </form>
 
       <form onSubmit={onSaveDonate} className="mt-6 flex flex-col gap-4 rounded-xl border border-border bg-surface p-5 shadow-sm">
-        <h3 className="font-semibold text-ink">Donate screen copy</h3>
+        <div>
+          <h3 className="font-semibold text-ink">Donate screen copy</h3>
+          <p className="mt-1 text-xs text-ink-muted">
+            Amount chips stay hardcoded (£5–£100) to match IAP products. Use{' '}
+            <code>{'{{amount}}'}</code> in monthly / success copy.
+          </p>
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="donate-hero-title">Hero title</Label>
+          <Input
+            id="donate-hero-title"
+            value={donate.hero_title ?? ''}
+            onChange={(e) => setDonate({ ...donate, hero_title: e.target.value })}
+          />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="donate-hero-sub">Hero subtitle</Label>
+          <Input
+            id="donate-hero-sub"
+            value={donate.hero_subtitle ?? ''}
+            onChange={(e) => setDonate({ ...donate, hero_subtitle: e.target.value })}
+          />
+        </div>
         <div className="flex flex-col gap-2">
           <Label htmlFor="donate-tagline">Tagline</Label>
           <Input
@@ -368,8 +527,127 @@ export function SettingsPage() {
             onChange={(e) => setDonate({ ...donate, guest_message: e.target.value })}
           />
         </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="donate-checkout-note">Checkout store note</Label>
+          <Textarea
+            id="donate-checkout-note"
+            rows={3}
+            value={donate.checkout_store_note ?? ''}
+            onChange={(e) => setDonate({ ...donate, checkout_store_note: e.target.value })}
+          />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="donate-monthly">Monthly renew note</Label>
+          <Textarea
+            id="donate-monthly"
+            rows={3}
+            value={donate.monthly_renew_note ?? ''}
+            onChange={(e) => setDonate({ ...donate, monthly_renew_note: e.target.value })}
+          />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="donate-success-title">Success title</Label>
+          <Input
+            id="donate-success-title"
+            value={donate.success_title ?? ''}
+            onChange={(e) => setDonate({ ...donate, success_title: e.target.value })}
+          />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="donate-success-sub">Success subtitle</Label>
+          <Input
+            id="donate-success-sub"
+            value={donate.success_subtitle ?? ''}
+            onChange={(e) => setDonate({ ...donate, success_subtitle: e.target.value })}
+          />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="donate-impact-json">Impact cards JSON</Label>
+          <Textarea
+            id="donate-impact-json"
+            rows={8}
+            value={impactCardsJson}
+            onChange={(e) => setImpactCardsJson(e.target.value)}
+            className="font-mono text-xs"
+          />
+        </div>
         <Button type="submit" size="sm" className="self-start" disabled={saving === 'donate_copy'}>
           {saving === 'donate_copy' ? 'Saving…' : 'Save donate copy'}
+        </Button>
+      </form>
+
+      <form onSubmit={onSaveOnboarding} className="mt-6 flex flex-col gap-4 rounded-xl border border-border bg-surface p-5 shadow-sm">
+        <h3 className="font-semibold text-ink">Onboarding</h3>
+        {(
+          [
+            ['brand', 'Brand'],
+            ['intro_title', 'Intro title'],
+            ['intro_subtitle', 'Intro subtitle'],
+            ['intro_cta', 'Intro CTA'],
+            ['why_title', 'Why title'],
+            ['why_subtitle', 'Why subtitle'],
+            ['skip_label', 'Skip'],
+            ['create_account_cta', 'Create account'],
+            ['sign_in_cta', 'Sign in'],
+          ] as const
+        ).map(([key, label]) => (
+          <div key={key} className="flex flex-col gap-2">
+            <Label htmlFor={`onboard-${key}`}>{label}</Label>
+            {key.includes('subtitle') || key.includes('title') ? (
+              <Textarea
+                id={`onboard-${key}`}
+                rows={key.includes('subtitle') ? 3 : 2}
+                value={onboarding[key]}
+                onChange={(e) => setOnboarding({ ...onboarding, [key]: e.target.value })}
+              />
+            ) : (
+              <Input
+                id={`onboard-${key}`}
+                value={onboarding[key]}
+                onChange={(e) => setOnboarding({ ...onboarding, [key]: e.target.value })}
+              />
+            )}
+          </div>
+        ))}
+        <Button type="submit" size="sm" className="self-start" disabled={saving === 'onboarding'}>
+          {saving === 'onboarding' ? 'Saving…' : 'Save onboarding'}
+        </Button>
+      </form>
+
+      <form onSubmit={onSavePermissions} className="mt-6 flex flex-col gap-4 rounded-xl border border-border bg-surface p-5 shadow-sm">
+        <h3 className="font-semibold text-ink">Permissions screen</h3>
+        {(
+          [
+            ['title', 'Title'],
+            ['subtitle', 'Subtitle'],
+            ['notifications_title', 'Notifications title'],
+            ['notifications_description', 'Notifications description'],
+            ['location_title', 'Location title'],
+            ['location_description', 'Location description'],
+            ['continue_label', 'Continue'],
+            ['skip_label', 'Skip / not now'],
+          ] as const
+        ).map(([key, label]) => (
+          <div key={key} className="flex flex-col gap-2">
+            <Label htmlFor={`perm-${key}`}>{label}</Label>
+            {key.includes('subtitle') || key.includes('description') ? (
+              <Textarea
+                id={`perm-${key}`}
+                rows={2}
+                value={permissions[key]}
+                onChange={(e) => setPermissions({ ...permissions, [key]: e.target.value })}
+              />
+            ) : (
+              <Input
+                id={`perm-${key}`}
+                value={permissions[key]}
+                onChange={(e) => setPermissions({ ...permissions, [key]: e.target.value })}
+              />
+            )}
+          </div>
+        ))}
+        <Button type="submit" size="sm" className="self-start" disabled={saving === 'permissions'}>
+          {saving === 'permissions' ? 'Saving…' : 'Save permissions'}
         </Button>
       </form>
 
@@ -437,9 +715,9 @@ export function SettingsPage() {
         <div>
           <h3 className="font-semibold text-ink">Postage display</h3>
           <p className="mt-1 text-xs text-ink-muted">
-            CMS can change displayed pence/label used by mobile. Changing the real IAP price still
-            requires App Store / Play Console and RevenueCat product{' '}
-            <code>dq_postage_399</code> to stay in sync — do not rename the product ID casually.
+            CMS can change displayed pence/label used by mobile. Postage is charged with Stripe
+            (not App Store / Play Billing). The amount charged in the app is server-fixed at
+            £3.99; keep display pence in sync with that.
           </p>
         </div>
         <div className="flex flex-col gap-2">
@@ -472,6 +750,69 @@ export function SettingsPage() {
         </div>
         <Button type="submit" size="sm" className="self-start" disabled={saving === 'postage'}>
           {saving === 'postage' ? 'Saving…' : 'Save postage'}
+        </Button>
+      </form>
+
+      <form onSubmit={onSaveLegal} className="mt-6 flex flex-col gap-4 rounded-xl border border-border bg-surface p-5 shadow-sm">
+        <div>
+          <h3 className="font-semibold text-ink">Legal documents</h3>
+          <p className="mt-1 text-xs text-ink-muted">
+            In-app Privacy, Terms, and Support markdown. The public <code>site/*.html</code> pages are
+            still deployed separately.
+          </p>
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="legal-privacy">Privacy policy (markdown)</Label>
+          <Textarea
+            id="legal-privacy"
+            rows={12}
+            value={legal.privacy_md}
+            onChange={(e) => setLegal({ ...legal, privacy_md: e.target.value })}
+            className="font-mono text-xs"
+          />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="legal-terms">Terms (markdown)</Label>
+          <Textarea
+            id="legal-terms"
+            rows={12}
+            value={legal.terms_md}
+            onChange={(e) => setLegal({ ...legal, terms_md: e.target.value })}
+            className="font-mono text-xs"
+          />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="legal-support">Support (markdown)</Label>
+          <Textarea
+            id="legal-support"
+            rows={10}
+            value={legal.support_md}
+            onChange={(e) => setLegal({ ...legal, support_md: e.target.value })}
+            className="font-mono text-xs"
+          />
+        </div>
+        <Button type="submit" size="sm" className="self-start" disabled={saving === 'legal_documents'}>
+          {saving === 'legal_documents' ? 'Saving…' : 'Save legal documents'}
+        </Button>
+      </form>
+
+      <form onSubmit={onSaveLogistics} className="mt-6 flex flex-col gap-4 rounded-xl border border-border bg-surface p-5 shadow-sm">
+        <div>
+          <h3 className="font-semibold text-ink">Logistics</h3>
+          <p className="mt-1 text-xs text-ink-muted">
+            Nested groups/items JSON (<code>label</code>, <code>title</code>, <code>snippet</code>,{' '}
+            <code>icon</code> name, <code>kind</code>, <code>tips</code>, <code>ihram_steps</code>,{' '}
+            <code>visa_cards</code>). Images stay on App media.
+          </p>
+        </div>
+        <Textarea
+          rows={16}
+          value={logisticsJson}
+          onChange={(e) => setLogisticsJson(e.target.value)}
+          className="font-mono text-xs"
+        />
+        <Button type="submit" size="sm" className="self-start" disabled={saving === 'logistics'}>
+          {saving === 'logistics' ? 'Saving…' : 'Save logistics'}
         </Button>
       </form>
 
@@ -540,9 +881,10 @@ export function SettingsPage() {
         <div>
           <h3 className="font-semibold text-ink">Donation email copy</h3>
           <p className="mt-1 text-xs text-ink-muted">
-            Templates for the <code>donation-email</code> edge function. Placeholders:{' '}
+            Templates for the <code>donation-email</code> edge function. Intro and footer also
+            show on the in-app donate success screen. Placeholders:{' '}
             <code>{'{{receipt_id}}'}</code>, <code>{'{{amount}}'}</code>,{' '}
-            <code>{'{{donor_name}}'}</code>.
+            <code>{'{{donor_name}}'}</code>. Do not imply an email was sent from the app.
           </p>
         </div>
         <div className="flex flex-col gap-2">

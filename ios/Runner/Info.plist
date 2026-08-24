@@ -72,5 +72,29 @@
 	<string>Donate Quran sends order updates, donation confirmations, and scholar replies.</string>
 	<key>NSMotionUsageDescription</key>
 	<string>Donate Quran uses device motion sensors for the Qibla compass.</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>https</string>
+		<string>http</string>
+	</array>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>org.donatequran.app</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>donatequran</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

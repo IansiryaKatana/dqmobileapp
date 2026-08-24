@@ -7,13 +7,13 @@ Donate Quran
 Share the Quran worldwide
 
 ## Short Description (Play Store, 80 chars)
-Donate, order, read and share the Quran. 100% towards printing.
+Donate, order, read and share the Quran.
 
 ## Full Description
 
 Donate Quran is your trusted companion for sharing the message of Islam worldwide.
 
-**Donate** — Fund Quran printing with one-time or monthly donations. 100% of public donations go towards printing.
+**Donate** — Fund Quran printing with one-time or monthly donations. Store processing fees may apply; the remainder goes to printing.
 
 **Order** — Request free Quran copies for yourself or your community.
 
@@ -37,10 +37,10 @@ Lifestyle / Education
 4+ / Everyone
 
 ## Support URL
-https://donatequran.org/support
+https://donatequran.com/support
 
 ## Privacy Policy URL
-https://donatequran.org/privacy
+https://donatequran.com/privacy
 
 ## Screenshots Needed
 

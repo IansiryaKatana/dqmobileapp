@@ -5,7 +5,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/dq_theme.dart';
 
-/// Figma pill tabs (yellow active, sand inactive).
+/// Figma pill tabs (brand fill active, sand inactive).
 class DqPillTabs<T> extends StatelessWidget {
   const DqPillTabs({
     super.key,
@@ -43,7 +43,7 @@ class DqPillTabs<T> extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: isActive ? AppColors.navy : dq.muted,
+                      color: isActive ? AppColors.onBrand : dq.muted,
                     ),
                   ),
                 ),
@@ -344,7 +344,7 @@ class DqContinueReadingCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
               child: const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Text('Continue', style: TextStyle(color: AppColors.navy, fontSize: 12, fontWeight: FontWeight.bold)),
+                child: Text('Continue', style: TextStyle(color: AppColors.onBrand, fontSize: 12, fontWeight: FontWeight.bold)),
               ),
             ),
           ),
@@ -426,7 +426,7 @@ class DqMiniAudioBar extends StatelessWidget {
                 child: SizedBox(
                   width: 40,
                   height: 40,
-                  child: Icon(playing ? Icons.pause : Icons.play_arrow, color: AppColors.navy, size: 20),
+                  child: Icon(playing ? Icons.pause : Icons.play_arrow, color: AppColors.onBrand, size: 20),
                 ),
               ),
             ),

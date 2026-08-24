@@ -3,16 +3,18 @@ import 'package:flutter/services.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
 import '../config/env_config.dart';
+import 'content_repository.dart';
 
-/// RevenueCat / store product identifiers.
+/// RevenueCat / store product identifiers for **donations only**.
 ///
-/// Create matching products in App Store Connect and Google Play, then attach
-/// them to a RevenueCat offering. Expected IDs (document in `.env.example`):
+/// Physical postage is charged via Stripe (see [PostagePaymentService]).
+///
+/// Create matching donation products in App Store Connect and Google Play, then
+/// attach them to a RevenueCat offering. Expected IDs:
 ///
 /// One-time donations: `dq_donate_5_once`, `dq_donate_10_once`, `dq_donate_25_once`,
 /// `dq_donate_50_once`, `dq_donate_100_once`
 /// Monthly: `dq_donate_5_monthly`, `dq_donate_10_monthly`, … `dq_donate_100_monthly`
-/// Postage: `dq_postage_399` (£3.99)
 ///
 /// Custom amounts outside this catalogue fail closed in release (no wrong package).
 abstract final class PurchaseService {
@@ -20,9 +22,6 @@ abstract final class PurchaseService {
 
   /// Preset donation amounts (pounds) that map 1:1 to store products.
   static const supportedDonationPounds = {5, 10, 25, 50, 100};
-
-  static const postageProductId = 'dq_postage_399';
-  static const postagePence = 399;
 
   static Future<void> init({String? userId}) async {
     if (_initialized) return;
@@ -53,6 +52,23 @@ abstract final class PurchaseService {
     if (!_initialized) return false;
     final info = await Purchases.getCustomerInfo();
     return info.entitlements.active.isNotEmpty;
+  }
+
+  /// Restores App Store / Play Store purchases (required for subscriptions).
+  static Future<void> restorePurchases() async {
+    if (!_initialized) {
+      throw Exception('Purchases are not available yet. Please try again later.');
+    }
+    await Purchases.restorePurchases();
+  }
+
+  static Future<void> logOut() async {
+    if (!_initialized) return;
+    try {
+      await Purchases.logOut();
+    } catch (e) {
+      if (kDebugMode) debugPrint('RevenueCat logOut failed: $e');
+    }
   }
 
   /// Purchases the exact donation product for [amountPence] + frequency.
@@ -98,34 +114,6 @@ abstract final class PurchaseService {
     }
   }
 
-  /// Charges postage (£3.99) before an order is inserted.
-  static Future<bool> processPostagePayment() async {
-    if (!_initialized) {
-      if (kReleaseMode) {
-        throw Exception('Postage payment is not available yet. Please try again later.');
-      }
-      return false;
-    }
-
-    try {
-      final package = await _findPackage(postageProductId);
-      if (package == null) {
-        throw Exception(
-          'Postage product "$postageProductId" is not in the current RevenueCat offering. '
-          'Configure £3.99 postage in the stores and RevenueCat, then try again.',
-        );
-      }
-      await Purchases.purchasePackage(package);
-      return true;
-    } on PlatformException catch (e) {
-      _rethrowPurchaseError(e, cancelledMessage: 'Postage payment was cancelled.');
-    } catch (e) {
-      if (_isUserFacing(e)) rethrow;
-      if (kDebugMode) debugPrint('RevenueCat postage failed: $e');
-      throw Exception('Postage payment was not completed. Please try again.');
-    }
-  }
-
   static Never _rethrowPurchaseError(PlatformException e, {required String cancelledMessage}) {
     final code = PurchasesErrorHelper.getErrorCode(e);
     if (code == PurchasesErrorCode.purchaseCancelledError) {
@@ -138,17 +126,31 @@ abstract final class PurchaseService {
   static bool _isUserFacing(Object e) {
     final msg = e.toString();
     return msg.contains('Donation product') ||
-        msg.contains('Postage product') ||
         msg.contains('not available as an in-app') ||
         msg.contains('Payment was cancelled') ||
-        msg.contains('Postage payment was cancelled') ||
-        msg.contains('Payments are not available') ||
-        msg.contains('Postage payment is not available');
+        msg.contains('Payments are not available');
+  }
+
+  /// Named offering from CMS when present in [availableIds]; otherwise current.
+  /// Empty / `default` keeps today's `offerings.current` behaviour.
+  static String? offeringIdToUse({
+    required String? configuredId,
+    required Iterable<String> availableIds,
+  }) {
+    final id = configuredId?.trim();
+    if (id == null || id.isEmpty || id.toLowerCase() == 'default') return null;
+    if (availableIds.contains(id)) return id;
+    return null;
   }
 
   static Future<Package?> _findPackage(String productId) async {
     final offerings = await Purchases.getOfferings();
-    final offering = offerings.current;
+    final configured = await ContentRepository(EnvConfig.supabase).fetchRevenueCat();
+    final named = offeringIdToUse(
+      configuredId: configured.offeringId,
+      availableIds: offerings.all.keys,
+    );
+    final offering = named != null ? offerings.all[named] : offerings.current;
     if (offering == null) return null;
     for (final package in offering.availablePackages) {
       if (package.storeProduct.identifier == productId) return package;

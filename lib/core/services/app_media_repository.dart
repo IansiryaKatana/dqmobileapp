@@ -83,6 +83,11 @@ class AppMediaRepository {
           slotKey: 'logo',
           fallbackAsset: AppAssets.logoWordmark,
         ),
+        'onboarding.background': const AppMediaSlot(
+          pageKey: 'onboarding',
+          slotKey: 'background',
+          fallbackAsset: AppAssets.onboardingBg,
+        ),
         'home.quran_banner': const AppMediaSlot(
           pageKey: 'home',
           slotKey: 'quran_banner',
@@ -143,6 +148,23 @@ class AppMediaRepository {
           slotKey: 'nusuk',
           fallbackAsset: AppAssets.logisticsNusuk,
         ),
+        'wudu.bismillah': const AppMediaSlot(
+          pageKey: 'wudu',
+          slotKey: 'bismillah',
+          fallbackAsset: AppAssets.wuduBismillah,
+        ),
+        'wudu.hands': const AppMediaSlot(pageKey: 'wudu', slotKey: 'hands'),
+        'wudu.mouth': const AppMediaSlot(pageKey: 'wudu', slotKey: 'mouth'),
+        'wudu.nose': const AppMediaSlot(pageKey: 'wudu', slotKey: 'nose'),
+        'wudu.face': const AppMediaSlot(pageKey: 'wudu', slotKey: 'face'),
+        'wudu.arms': const AppMediaSlot(pageKey: 'wudu', slotKey: 'arms'),
+        'wudu.head': const AppMediaSlot(pageKey: 'wudu', slotKey: 'head'),
+        'wudu.ears': const AppMediaSlot(pageKey: 'wudu', slotKey: 'ears'),
+        'wudu.feet': const AppMediaSlot(pageKey: 'wudu', slotKey: 'feet'),
+        'wudu.closing': const AppMediaSlot(pageKey: 'wudu', slotKey: 'closing'),
+        for (final page in ['pray-fajr', 'pray-dhuhr', 'pray-asr', 'pray-maghrib', 'pray-isha'])
+          for (final slot in AppAssets.prayStepSlots)
+            '$page.$slot': AppMediaSlot(pageKey: page, slotKey: slot),
       };
 }
 

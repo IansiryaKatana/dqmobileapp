@@ -10,9 +10,9 @@
   --color-ink: #1c1917;
   --color-ink-muted: #57534e;
   --color-ink-subtle: #78716c;
-  --color-accent: #b45309;
-  --color-accent-hover: #92400e;
-  --color-accent-soft: #fef3c7;
+  --color-accent: #98724d;
+  --color-accent-hover: #7a5a3d;
+  --color-accent-soft: #f3ebe3;
   --color-border: #e7e0d5;
   --color-surface: #ffffff;
   --color-danger: #dc2626;
@@ -51,4 +51,26 @@ textarea,
 select,
 button {
   @apply outline-none;
+}
+
+/* Visible thin scrollbar for the sidebar nav */
+.sidebar-scroll {
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: #98724d #243044;
+}
+
+.sidebar-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar-scroll::-webkit-scrollbar-track {
+  background: #243044;
+  border-radius: 999px;
+}
+
+.sidebar-scroll::-webkit-scrollbar-thumb {
+  background: #98724d;
+  border-radius: 999px;
 }

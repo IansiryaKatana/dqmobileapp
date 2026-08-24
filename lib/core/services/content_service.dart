@@ -132,7 +132,7 @@ Allah rewards sincere effort. Consistency matters more than perfection on day on
   static const faq = [
     FaqItem(
       question: 'Where does my donation go?',
-      answer: '100% of public donations go towards Quran printing and distribution.',
+      answer: 'Donations fund Quran printing and distribution. If you pay through the App Store or Play Store, those stores may deduct a processing fee; the remainder goes to printing.',
     ),
     FaqItem(
       question: 'Is the Quran really free?',

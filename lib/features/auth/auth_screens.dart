@@ -4,14 +4,15 @@ import 'package:go_router/go_router.dart';
 
 import '../../shared/utils/error_messages.dart';
 import '../../shared/utils/validators.dart';
+import '../../core/constants/app_assets.dart';
 import '../../core/providers/app_state_provider.dart';
 import '../../core/services/auth_repository.dart';
 import '../../core/services/content_repository.dart';
 import '../../core/services/content_service.dart';
+import '../../core/services/purchase_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../shared/widgets/dq_buttons.dart';
 import '../../shared/widgets/dq_states.dart';
-import '../../shared/widgets/dq_logo.dart';
 import '../../shared/widgets/figma_components.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -107,18 +108,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     Center(
                       child: Column(
                         children: [
-                          Container(
-                            width: 64,
-                            height: 64,
-                            decoration: BoxDecoration(
-                              color: AppColors.yellow.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(22),
-                              border: Border.all(color: AppColors.yellow.withValues(alpha: 0.25)),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(22),
+                            child: Image.asset(
+                              AppAssets.appIcon,
+                              width: 72,
+                              height: 72,
+                              fit: BoxFit.cover,
                             ),
-                            child: const Icon(Icons.menu_book_rounded, size: 30, color: AppColors.yellow),
                           ),
-                          const SizedBox(height: 16),
-                          const DqLogo(size: LogoSize.large),
                           const SizedBox(height: 16),
                           const Text('Welcome Back', style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800, color: AppColors.charcoal)),
                           const SizedBox(height: 4),
@@ -251,7 +249,15 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                     Center(
                       child: Column(
                         children: [
-                          const DqLogo(size: LogoSize.large),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(22),
+                            child: Image.asset(
+                              AppAssets.appIcon,
+                              width: 72,
+                              height: 72,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
                           const SizedBox(height: 16),
                           const Text('Create Account', style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800, color: AppColors.charcoal)),
                           const SizedBox(height: 4),
@@ -301,7 +307,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                               borderRadius: BorderRadius.circular(6),
                               border: Border.all(color: _agreed ? AppColors.yellow : AppColors.border, width: 1.5),
                             ),
-                            child: _agreed ? const Icon(Icons.check, size: 14, color: AppColors.navy) : null,
+                            child: _agreed ? const Icon(Icons.check, size: 14, color: AppColors.onBrand) : null,
                           ),
                           const SizedBox(width: 12),
                           const Expanded(
@@ -345,6 +351,54 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
         ),
       ),
     );
+  }
+}
+
+Future<void> _confirmDeleteAccount(BuildContext context, WidgetRef ref) async {
+  final controller = TextEditingController();
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (ctx) {
+      return AlertDialog(
+        title: const Text('Delete account'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'This permanently deletes your login and profile. Type DELETE to confirm.',
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: controller,
+              decoration: const InputDecoration(hintText: 'DELETE'),
+              autocorrect: false,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () {
+              if (controller.text.trim() == 'DELETE') {
+                Navigator.pop(ctx, true);
+              }
+            },
+            child: const Text('Delete', style: TextStyle(color: AppColors.destructive)),
+          ),
+        ],
+      );
+    },
+  );
+  controller.dispose();
+  if (confirmed != true || !context.mounted) return;
+  try {
+    await ref.read(authRepositoryProvider).deleteAccount();
+    if (context.mounted) context.go('/home');
+  } catch (e) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ErrorMessages.friendly(e))));
+    }
   }
 }
 
@@ -458,6 +512,26 @@ class ProfileScreen extends ConsumerWidget {
                       DqMenuItem(label: 'Saved Addresses', onTap: () => context.push('/profile/addresses'), icon: Icons.location_on_outlined),
                       DqMenuItem(label: 'Privacy Policy', onTap: () => context.push('/privacy')),
                       DqMenuItem(label: 'Terms & Conditions', onTap: () => context.push('/terms')),
+                      DqMenuItem(
+                        label: 'Restore purchases',
+                        icon: Icons.restore,
+                        onTap: () async {
+                          try {
+                            await PurchaseService.restorePurchases();
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Purchases restored.')),
+                              );
+                            }
+                          } catch (e) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text(ErrorMessages.friendly(e))),
+                              );
+                            }
+                          }
+                        },
+                      ),
                       if (user != null) DqMenuItem(label: 'My Questions', onTap: () => context.push('/profile/questions'), icon: Icons.question_answer_outlined),
                     ],
                   ),
@@ -484,6 +558,30 @@ class ProfileScreen extends ConsumerWidget {
                               Icon(Icons.logout, size: 16, color: AppColors.destructive),
                               SizedBox(width: 12),
                               Text('Log Out', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.destructive)),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Material(
+                      color: AppColors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      child: InkWell(
+                        onTap: () => _confirmDeleteAccount(context, ref),
+                        borderRadius: BorderRadius.circular(20),
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: AppColors.border),
+                          ),
+                          child: const Row(
+                            children: [
+                              Icon(Icons.delete_outline, size: 16, color: AppColors.destructive),
+                              SizedBox(width: 12),
+                              Text('Delete account', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.destructive)),
                             ],
                           ),
                         ),
@@ -707,7 +805,7 @@ class LanguageSelectScreen extends ConsumerWidget {
                                 width: 28,
                                 height: 28,
                                 decoration: const BoxDecoration(color: AppColors.yellow, shape: BoxShape.circle),
-                                child: const Icon(Icons.check, size: 14, color: AppColors.navy),
+                                child: const Icon(Icons.check, size: 14, color: AppColors.onBrand),
                               ),
                           ],
                         ),

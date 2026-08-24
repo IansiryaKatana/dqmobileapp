@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/providers/app_state_provider.dart';
+import '../../core/services/content_repository.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../shared/widgets/dq_onboard_background.dart';
@@ -68,13 +69,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 }
 
 /// Screen 1 — layout matches exppppp.png
-class _OnboardIntroPage extends StatelessWidget {
+class _OnboardIntroPage extends ConsumerWidget {
   const _OnboardIntroPage({required this.onGetStarted});
 
   final VoidCallback onGetStarted;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final copy = ref.watch(onboardingCopyProvider).valueOrNull ?? OnboardingCopy.fallback;
     final bottom = MediaQuery.paddingOf(context).bottom;
     return DqOnboardBackground(
       child: SafeArea(
@@ -84,10 +86,10 @@ class _OnboardIntroPage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text(
-                'Donate Quran',
+              Text(
+                copy.brand,
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
@@ -95,9 +97,9 @@ class _OnboardIntroPage extends StatelessWidget {
                 ),
               ),
               const Spacer(flex: 3),
-              const Text(
-                'Give the gift\nof Quran',
-                style: TextStyle(
+              Text(
+                copy.introTitle,
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 40,
                   fontWeight: FontWeight.w800,
@@ -107,7 +109,7 @@ class _OnboardIntroPage extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Text(
-                'Donate, order, read and share the Quran\nthrough one trusted app.',
+                copy.introSubtitle,
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.85),
                   fontSize: 15,
@@ -128,7 +130,7 @@ class _OnboardIntroPage extends StatelessWidget {
                     child: Row(
                       children: [
                         Text(
-                          'GET STARTED',
+                          copy.introCta,
                           style: TextStyle(
                             color: Colors.white.withValues(alpha: 0.95),
                             fontSize: 14,
@@ -152,7 +154,7 @@ class _OnboardIntroPage extends StatelessWidget {
 }
 
 /// Screen 2 — layout matches eeeeee.png
-class _OnboardWhyPage extends StatelessWidget {
+class _OnboardWhyPage extends ConsumerWidget {
   const _OnboardWhyPage({
     required this.onSkip,
     required this.onCreateAccount,
@@ -164,7 +166,8 @@ class _OnboardWhyPage extends StatelessWidget {
   final VoidCallback onSignIn;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final copy = ref.watch(onboardingCopyProvider).valueOrNull ?? OnboardingCopy.fallback;
     final bottom = MediaQuery.paddingOf(context).bottom;
     return DqOnboardBackground(
       child: SafeArea(
@@ -176,10 +179,10 @@ class _OnboardWhyPage extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  const Expanded(
+                  Expanded(
                     child: Text(
-                      'Donate Quran',
-                      style: TextStyle(
+                      copy.brand,
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -197,14 +200,14 @@ class _OnboardWhyPage extends StatelessWidget {
                       minimumSize: Size.zero,
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
-                    child: const Text('Skip', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                    child: Text(copy.skipLabel, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                   ),
                 ],
               ),
               const Spacer(flex: 2),
-              const Text(
-                'Why\nDonate Quran?',
-                style: TextStyle(
+              Text(
+                copy.whyTitle,
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 38,
                   fontWeight: FontWeight.w800,
@@ -214,7 +217,7 @@ class _OnboardWhyPage extends StatelessWidget {
               ),
               const SizedBox(height: 18),
               Text(
-                'Your donation helps provide free Qurans to those who need them most. Together, we can spread the message and bring guidance to every heart.',
+                copy.whySubtitle,
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.88),
                   fontSize: 15,
@@ -229,11 +232,11 @@ class _OnboardWhyPage extends StatelessWidget {
                   onPressed: onCreateAccount,
                   style: FilledButton.styleFrom(
                     backgroundColor: AppColors.yellow,
-                    foregroundColor: Colors.black,
+                    foregroundColor: AppColors.onBrand,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.radiusButton)),
                     textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                   ),
-                  child: const Text('Create Account'),
+                  child: Text(copy.createAccountCta),
                 ),
               ),
               const SizedBox(height: 12),
@@ -247,7 +250,7 @@ class _OnboardWhyPage extends StatelessWidget {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.radiusButton)),
                     textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                   ),
-                  child: const Text('Sign In'),
+                  child: Text(copy.signInCta),
                 ),
               ),
             ],

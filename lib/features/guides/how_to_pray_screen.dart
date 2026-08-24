@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/constants/app_assets.dart';
 import '../../core/router/root_nav.dart';
 import '../../core/services/guide_repository.dart';
 import '../../core/services/guide_service.dart';
@@ -16,11 +17,11 @@ class HowToPrayScreen extends ConsumerWidget {
   const HowToPrayScreen({super.key});
 
   static const _fallbackPrayers = [
-    _PrayerCard(name: 'Fajr', arabic: 'الفجر', time: 'Before sunrise', rakaat: 2, accent: Color(0xFFFF8C42)),
-    _PrayerCard(name: 'Dhuhr', arabic: 'الظهر', time: 'Midday', rakaat: 4, accent: Color(0xFF10B981)),
-    _PrayerCard(name: 'Asr', arabic: 'العصر', time: 'Afternoon', rakaat: 4, accent: Color(0xFF6366F1)),
-    _PrayerCard(name: 'Maghrib', arabic: 'المغرب', time: 'After sunset', rakaat: 3, accent: Color(0xFFF43F5E)),
-    _PrayerCard(name: 'Isha', arabic: 'العشاء', time: 'Night', rakaat: 4, accent: AppColors.navy),
+    _PrayerCard(name: 'Fajr', arabic: 'الفجر', time: 'Before sunrise', rakaat: 2, accent: Color(0xFFFF8C42), routeKey: 'fajr'),
+    _PrayerCard(name: 'Dhuhr', arabic: 'الظهر', time: 'Midday', rakaat: 4, accent: Color(0xFF10B981), routeKey: 'dhuhr'),
+    _PrayerCard(name: 'Asr', arabic: 'العصر', time: 'Afternoon', rakaat: 4, accent: Color(0xFF6366F1), routeKey: 'asr'),
+    _PrayerCard(name: 'Maghrib', arabic: 'المغرب', time: 'After sunset', rakaat: 3, accent: Color(0xFFF43F5E), routeKey: 'maghrib'),
+    _PrayerCard(name: 'Isha', arabic: 'العشاء', time: 'Night', rakaat: 4, accent: AppColors.navy, routeKey: 'isha'),
   ];
 
   List<_PrayerCard> _fromCms(List<GuideStep> rows) {
@@ -48,6 +49,8 @@ class HowToPrayScreen extends ConsumerWidget {
           : (meta?['time'] as String? ?? row.body);
       final rakaat = row.rakaat ??
           (meta?['rakaat'] is int ? meta!['rakaat'] as int : int.tryParse('${meta?['rakaat']}') ?? 2);
+      final routeKey = AppAssets.prayGuideSlugForName(row.title)?.replaceFirst('pray-', '') ??
+          row.title.toLowerCase().trim();
       out.add(
         _PrayerCard(
           name: row.title,
@@ -55,6 +58,7 @@ class HowToPrayScreen extends ConsumerWidget {
           time: time,
           rakaat: rakaat,
           accent: accent,
+          routeKey: routeKey,
         ),
       );
     }
@@ -155,9 +159,9 @@ class HowToPrayScreen extends ConsumerWidget {
                           child: const Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.water_drop_outlined, size: 16, color: AppColors.navy),
+                              Icon(Icons.water_drop_outlined, size: 16, color: AppColors.onBrand),
                               SizedBox(width: 8),
-                              Text('Learn Wudu', style: TextStyle(color: AppColors.navy, fontWeight: FontWeight.bold, fontSize: 13)),
+                              Text('Learn Wudu', style: TextStyle(color: AppColors.onBrand, fontWeight: FontWeight.bold, fontSize: 13)),
                             ],
                           ),
                         ),
@@ -199,59 +203,68 @@ class HowToPrayScreen extends ConsumerWidget {
   }
 
   Widget _prayerTile(BuildContext context, _PrayerCard prayer, int index) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: context.colors.surface,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: context.dq.cardBorder),
-        boxShadow: const [BoxShadow(color: Color(0x0A000000), blurRadius: 8, offset: Offset(0, 2))],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: prayer.accent.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Center(
-              child: Text(
-                '$index',
-                style: TextStyle(color: prayer.accent, fontWeight: FontWeight.w800, fontSize: 15),
-              ),
-            ),
+    return Material(
+      color: context.colors.surface,
+      borderRadius: BorderRadius.circular(18),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => pushRootRoute(context, '/pray-guide/${prayer.routeKey}'),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: context.dq.cardBorder),
+            boxShadow: const [BoxShadow(color: Color(0x0A000000), blurRadius: 8, offset: Offset(0, 2))],
           ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: prayer.accent.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Center(
+                  child: Text(
+                    '$index',
+                    style: TextStyle(color: prayer.accent, fontWeight: FontWeight.w800, fontSize: 15),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(prayer.name, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
-                    const SizedBox(width: 8),
-                    Text(prayer.arabic, style: TextStyle(fontSize: 14, color: context.colors.primary)),
+                    Row(
+                      children: [
+                        Text(prayer.name, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                        const SizedBox(width: 8),
+                        Text(prayer.arabic, style: TextStyle(fontSize: 14, color: context.colors.primary)),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(prayer.time, style: TextStyle(fontSize: 12, color: context.dq.muted)),
                   ],
                 ),
-                const SizedBox(height: 2),
-                Text(prayer.time, style: TextStyle(fontSize: 12, color: context.dq.muted)),
-              ],
-            ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.sand,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  '${prayer.rakaat} rak\'ah',
+                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.muted),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Icon(Icons.chevron_right, color: context.dq.muted, size: 20),
+            ],
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: AppColors.sand,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              '${prayer.rakaat} rak\'ah',
-              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.muted),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -264,6 +277,7 @@ class _PrayerCard {
     required this.time,
     required this.rakaat,
     required this.accent,
+    required this.routeKey,
   });
 
   final String name;
@@ -271,4 +285,5 @@ class _PrayerCard {
   final String time;
   final int rakaat;
   final Color accent;
+  final String routeKey;
 }

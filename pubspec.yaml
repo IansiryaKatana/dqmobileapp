@@ -34,6 +34,8 @@ dependencies:
   audioplayers: ^6.1.0
   connectivity_plus: ^6.1.4
   firebase_crashlytics: ^4.3.10
+  flutter_stripe: ^11.4.0
+  flutter_markdown: ^0.7.7+1
 
 dev_dependencies:
   flutter_test:
@@ -52,20 +54,8 @@ flutter_launcher_icons:
 flutter:
   uses-material-design: true
   assets:
-    - assets/images/app_icon.png
-    - assets/images/donate_quran_logo.png
-    - assets/images/donate_quran_bg.png
-    - assets/images/donate_quran_bg.webp
-    - assets/images/donate_quran_product.png
-    - assets/images/donate_quran_product.webp
-    - assets/images/quran_bookshot.png
-    - assets/images/quran_product.png
-    - assets/images/logistics_visa.jpg
-    - assets/images/logistics_ihram.jpg
-    - assets/images/logistics_haram.jpg
-    - assets/images/logistics_nabawi.jpg
-    - assets/images/logistics_jannat.jpg
-    - assets/images/logistics_nusuk.jpg
+    - assets/images/
     - assets/icons/kaaba.svg
-    - .env
-    - .env.example
+    - store/privacy_policy.md
+    - store/terms.md
+    - store/support.md

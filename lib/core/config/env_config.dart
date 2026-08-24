@@ -5,42 +5,56 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 abstract final class EnvConfig {
   static bool _loaded = false;
 
-  static String _get(String key) {
+  static String _get(String key, String fromDefine) {
+    if (fromDefine.isNotEmpty) return fromDefine;
     if (!_loaded) return '';
     return dotenv.env[key] ?? '';
   }
 
-  static String get supabaseUrl => _get('SUPABASE_URL');
-  static String get supabaseAnonKey => _get('SUPABASE_ANON_KEY');
-  static String get revenueCatAndroidKey => _get('REVENUECAT_API_KEY_ANDROID');
-  static String get revenueCatIosKey => _get('REVENUECAT_API_KEY_IOS');
+  static String get supabaseUrl =>
+      _get('SUPABASE_URL', const String.fromEnvironment('SUPABASE_URL'));
+  static String get supabaseAnonKey =>
+      _get('SUPABASE_ANON_KEY', const String.fromEnvironment('SUPABASE_ANON_KEY'));
+  static String get revenueCatAndroidKey => _get(
+        'REVENUECAT_API_KEY_ANDROID',
+        const String.fromEnvironment('REVENUECAT_API_KEY_ANDROID'),
+      );
+  static String get revenueCatIosKey => _get(
+        'REVENUECAT_API_KEY_IOS',
+        const String.fromEnvironment('REVENUECAT_API_KEY_IOS'),
+      );
+  static String get stripePublishableKey => _get(
+        'STRIPE_PUBLISHABLE_KEY',
+        const String.fromEnvironment('STRIPE_PUBLISHABLE_KEY'),
+      );
 
   static bool get hasSupabase =>
-      supabaseUrl.isNotEmpty && supabaseAnonKey.isNotEmpty && !supabaseUrl.contains('your-project');
+      supabaseUrl.isNotEmpty &&
+      supabaseAnonKey.isNotEmpty &&
+      !supabaseUrl.contains('your-project');
+
+  static bool get hasStripe =>
+      stripePublishableKey.isNotEmpty &&
+      stripePublishableKey.startsWith('pk_') &&
+      !stripePublishableKey.contains('your-stripe');
 
   static Future<void> load() async {
-    for (final file in ['.env', '.env.example']) {
-      try {
-        await dotenv.load(fileName: file);
-        _loaded = true;
-        if (file == '.env.example' && kDebugMode) {
-          debugPrint(
-            'No .env file found — using .env.example placeholders. '
-            'Copy .env.example to .env, add your keys, and list .env in pubspec.yaml assets.',
-          );
-        }
-        return;
-      } catch (_) {}
+    try {
+      await dotenv.load(fileName: '.env', isOptional: true);
+      _loaded = true;
+    } catch (_) {
+      _loaded = dotenv.isInitialized;
     }
-    _loaded = false;
-    if (kDebugMode) {
-      debugPrint('No env file loaded — app will run with offline/placeholder features only.');
+    if (!_loaded && kDebugMode) {
+      debugPrint(
+        'No .env asset loaded — using --dart-define / --dart-define-from-file values if provided.',
+      );
     }
   }
 
   static Future<void> initSupabase() async {
     if (!hasSupabase) return;
-    await Supabase.initialize(url: supabaseUrl, anonKey: supabaseAnonKey);
+    await Supabase.initialize(url: supabaseUrl, publishableKey: supabaseAnonKey);
   }
 
   static SupabaseClient? get supabase => hasSupabase ? Supabase.instance.client : null;

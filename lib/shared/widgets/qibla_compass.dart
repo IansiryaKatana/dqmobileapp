@@ -207,7 +207,7 @@ class _QiblaCompassState extends State<QiblaCompass> with TickerProviderStateMix
         if (showLive && !_aligned) ...[
           const SizedBox(height: 8),
           Text(
-            'Rotate until the yellow needle points up',
+            'Rotate until the needle points up',
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 12, color: dq.muted.withValues(alpha: 0.85)),
           ),

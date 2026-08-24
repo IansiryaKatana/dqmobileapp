@@ -4,6 +4,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/providers/app_state_provider.dart';
+import '../../core/services/content_repository.dart';
 import '../../core/services/push_notification_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/dq_theme.dart';
@@ -77,6 +78,7 @@ class _PermissionsScreenState extends ConsumerState<PermissionsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final copy = ref.watch(permissionsCopyProvider).valueOrNull ?? PermissionsCopy.fallback;
     return Scaffold(
       body: SafeArea(
         child: Padding(
@@ -86,40 +88,40 @@ class _PermissionsScreenState extends ConsumerState<PermissionsScreen> {
             children: [
               const SizedBox(height: 24),
               Text(
-                'Allow permissions',
+                copy.title,
                 style: context.text.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
               ),
               const SizedBox(height: 8),
               Text(
-                'Enable notifications and location for the best experience — order updates, donation receipts, and accurate Qibla direction.',
+                copy.subtitle,
                 style: context.text.bodyMedium?.copyWith(color: context.dq.muted, height: 1.5),
               ),
               const SizedBox(height: 32),
               _PermissionCard(
                 icon: Icons.notifications_outlined,
-                title: 'Notifications',
-                description: 'Order updates, donation confirmations, and scholar replies.',
+                title: copy.notificationsTitle,
+                description: copy.notificationsDescription,
                 granted: _notificationsGranted,
                 onEnable: _requesting ? null : _enableNotifications,
               ),
               const SizedBox(height: 12),
               _PermissionCard(
                 icon: Icons.explore_outlined,
-                title: 'Location',
-                description: 'Used for Qibla direction and prayer times near you.',
+                title: copy.locationTitle,
+                description: copy.locationDescription,
                 granted: _locationGranted,
                 onEnable: _requesting ? null : _enableLocation,
               ),
               const Spacer(),
               DqPrimaryButton(
-                label: 'Continue to app',
+                label: copy.continueLabel,
                 onPressed: _requesting ? null : _continue,
               ),
               const SizedBox(height: 8),
               Center(
                 child: TextButton(
                   onPressed: _requesting ? null : _continue,
-                  child: Text('Not now', style: TextStyle(color: context.dq.muted)),
+                  child: Text(copy.skipLabel, style: TextStyle(color: context.dq.muted)),
                 ),
               ),
             ],

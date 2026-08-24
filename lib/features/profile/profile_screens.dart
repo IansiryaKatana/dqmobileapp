@@ -199,7 +199,7 @@ class ReceiptDetailScreen extends StatelessWidget {
                         _row(context, 'Status', args.status),
                         _row(context, 'Date', args.createdAt.toLocal().toString().split('.').first),
                         const SizedBox(height: 12),
-                        const Text('100% of your donation supports Quran printing.', style: TextStyle(fontSize: 13)),
+                        const Text('Your donation funds Quran printing. Store processing fees may apply.', style: TextStyle(fontSize: 13)),
                       ],
                     ),
                   ),
