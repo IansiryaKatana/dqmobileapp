@@ -25,6 +25,8 @@ Repo-side store blockers are implemented. Complete these **outside the Flutter t
 - [ ] App Store Connect: privacy nutrition labels, age rating, encryption (HTTPS only), IAP subscription group, review demo login.
 - [ ] iPhone 6.7" screenshots (and iPad if you keep `TARGETED_DEVICE_FAMILY = 1,2`).
 - [ ] Confirm Codemagic uses bundle ID `com.donatequran.donatequran` (already set in `codemagic.yaml`).
+- [ ] Codemagic: App Store Connect API key named `app_store_credentials`, iOS distribution certificate + App Store provisioning profile for the bundle ID, and env group `app_store_credentials` with Supabase / RevenueCat iOS / Stripe keys.
+- [ ] Trigger workflow `ios-release` (or run `./scripts/build-ios.sh` on a Mac with Team ID in `ios/ExportOptions.plist`) and verify TestFlight / IPA artifacts.
 
 ## Google Play
 
