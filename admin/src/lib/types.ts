@@ -35,6 +35,9 @@ export type PilgrimageHubSettings = {
   eyebrow: string
   title: string
   disclaimer: string
+  ayah_ar?: string
+  ayah_en?: string
+  ayah_ref?: string
 }
 
 export type StaffRole = 'user' | 'editor' | 'admin'

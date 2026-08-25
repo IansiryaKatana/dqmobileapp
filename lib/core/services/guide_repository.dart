@@ -61,6 +61,9 @@ class GuideRepository {
           eyebrow: value['eyebrow'] as String? ?? GuideService.hub.eyebrow,
           title: value['title'] as String? ?? GuideService.hub.title,
           disclaimer: value['disclaimer'] as String? ?? GuideService.hub.disclaimer,
+          ayahAr: value['ayah_ar'] as String? ?? GuideService.hub.ayahAr,
+          ayahEn: value['ayah_en'] as String? ?? GuideService.hub.ayahEn,
+          ayahRef: value['ayah_ref'] as String? ?? GuideService.hub.ayahRef,
         ),
         usedFallback: false,
       );

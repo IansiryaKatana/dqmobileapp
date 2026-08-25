@@ -165,6 +165,12 @@ class AppMediaRepository {
         for (final page in ['pray-fajr', 'pray-dhuhr', 'pray-asr', 'pray-maghrib', 'pray-isha'])
           for (final slot in AppAssets.prayStepSlots)
             '$page.$slot': AppMediaSlot(pageKey: page, slotKey: slot),
+        for (final slot in AppAssets.umrahStepSlots)
+          'umrah.$slot': AppMediaSlot(pageKey: 'umrah', slotKey: slot),
+        for (final slot in AppAssets.hajjStepSlots)
+          'hajj.$slot': AppMediaSlot(pageKey: 'hajj', slotKey: slot),
+        'umrah.header': const AppMediaSlot(pageKey: 'umrah', slotKey: 'header'),
+        'hajj.header': const AppMediaSlot(pageKey: 'hajj', slotKey: 'header'),
       };
 }
 
@@ -213,7 +219,7 @@ class AppMediaImage extends ConsumerWidget {
         width: width,
         height: height,
         fit: fit,
-        errorWidget: (_, __, ___) => _assetOrEmpty(asset),
+        errorWidget: (_, _, _) => _assetOrEmpty(asset),
       );
     }
     return _assetOrEmpty(asset);
@@ -231,7 +237,7 @@ class AppMediaImage extends ConsumerWidget {
       width: width,
       height: height,
       fit: fit,
-      errorBuilder: (_, __, ___) => SizedBox(width: width, height: height),
+      errorBuilder: (_, _, _) => SizedBox(width: width, height: height),
     );
   }
 }

@@ -1,15 +1,22 @@
 import '../constants/app_assets.dart';
+import 'pilgrimage_guide_fallbacks.dart';
 
 class GuideHubCopy {
   const GuideHubCopy({
     required this.eyebrow,
     required this.title,
     required this.disclaimer,
+    this.ayahAr = '',
+    this.ayahEn = '',
+    this.ayahRef = '',
   });
 
   final String eyebrow;
   final String title;
   final String disclaimer;
+  final String ayahAr;
+  final String ayahEn;
+  final String ayahRef;
 }
 
 class GuideSection {
@@ -69,9 +76,12 @@ class GuideStep {
 abstract final class GuideService {
   static const hub = GuideHubCopy(
     eyebrow: 'Seeking the Pleasure of Allah',
-    title: 'UMRAH & HAJJ GUIDE',
+    title: 'Umrah & Hajj Guide',
     disclaimer:
         'All guides are based on authentic scholarly sources. Always consult a qualified scholar for personal rulings.',
+    ayahAr: 'وَأَتِمُّوا الْحَجَّ وَالْعُمْرَةَ لِلَّهِ',
+    ayahEn: 'Complete the Hajj and Umrah for Allah',
+    ayahRef: '2:196',
   );
 
   static const sections = [
@@ -132,81 +142,8 @@ abstract final class GuideService {
   ];
 
   static const stepsBySlug = {
-    'umrah': [
-      GuideStep(
-        title: 'Enter Ihram at the Miqat',
-        body:
-            'Make intention for Umrah and wear the Ihram garments before crossing the designated boundary.',
-      ),
-      GuideStep(
-        title: 'Recite the Talbiyah',
-        body: '“Labbayk Allahumma labbayk…” — continue until you begin Tawaf at the Kaaba.',
-      ),
-      GuideStep(
-        title: 'Perform Tawaf',
-        body:
-            'Circle the Kaaba seven times, starting and ending at the Black Stone, with humility and dhikr.',
-      ),
-      GuideStep(
-        title: "Pray two rak'ahs at Maqam Ibrahim",
-        body: 'If crowded, pray anywhere in the Haram.',
-      ),
-      GuideStep(
-        title: 'Drink Zamzam',
-        body:
-            'Make du\'a while drinking — the Prophet ﷺ said Zamzam is for whatever it is drunk for.',
-      ),
-      GuideStep(
-        title: "Perform Sa'i",
-        body: 'Walk seven times between Safa and Marwah, starting at Safa and ending at Marwah.',
-      ),
-      GuideStep(
-        title: 'Shave or trim hair (Halq/Taqsir)',
-        body: 'Men shave or shorten hair; women trim a fingertip-length from the ends.',
-      ),
-      GuideStep(
-        title: 'Umrah is complete',
-        body: 'You exit the state of Ihram. May Allah accept your worship.',
-      ),
-    ],
-    'hajj': [
-      GuideStep(
-        title: 'Enter Ihram for Hajj',
-        body: 'Assume Ihram at the Miqat with intention for Hajj on the prescribed days.',
-      ),
-      GuideStep(
-        title: 'Tawaf al-Qudum (arrival Tawaf)',
-        body: 'Upon reaching Makkah, perform the welcome Tawaf if time allows before the days of Hajj.',
-      ),
-      GuideStep(
-        title: 'Day of Arafah (Wuquf)',
-        body: 'Stand at Arafat from midday until sunset — the greatest pillar of Hajj.',
-      ),
-      GuideStep(
-        title: 'Muzdalifah',
-        body: 'After sunset on Arafah, proceed to Muzdalifah and combine Maghrib and Isha.',
-      ),
-      GuideStep(
-        title: 'Rami al-Jamarat',
-        body: 'Stone the pillars at Mina on the days of Tashreeq, following the Sunnah.',
-      ),
-      GuideStep(
-        title: 'Sacrifice (Hady)',
-        body: 'Offer the sacrifice if required — often arranged through your group or agent.',
-      ),
-      GuideStep(
-        title: 'Shave or trim hair',
-        body: 'Men shave or shorten; women trim. Partial release from Ihram restrictions follows.',
-      ),
-      GuideStep(
-        title: "Tawaf al-Ifadah",
-        body: "An essential pillar — perform Tawaf and Sa'i after the day of Eid.",
-      ),
-      GuideStep(
-        title: "Farewell Tawaf (Tawaf al-Wada')",
-        body: 'Before leaving Makkah, perform a final Tawaf as the farewell to the Haram.',
-      ),
-    ],
+    'umrah': PilgrimageGuideFallbacks.umrah,
+    'hajj': PilgrimageGuideFallbacks.hajj,
     'spiritual-preparation': [
       GuideStep(
         title: 'Renew your intention',

@@ -47,6 +47,40 @@ const PRAY_SLOTS = [
   { key: 'salam', label: 'Step 10 · Salam', description: 'Ending the prayer', fallback: null },
 ] as const
 
+const UMRAH_SLOTS = [
+  { key: 'header', label: 'Guide header background', description: 'Full-width image behind the Umrah guide header' },
+  { key: 'ihram_before', label: 'Step 1 · Before Assuming Ihram', description: 'Ghusl · Niyyah · Settle your affairs' },
+  { key: 'ihram_change', label: 'Step 2 · Change into Ihram', description: 'Men: two white cloths · Women: modest dress' },
+  { key: 'intention', label: 'Step 3 · Intention for Umrah', description: 'Miqat is 20–30 min before landing' },
+  { key: 'talbiyah', label: 'Step 4 · Talbiyah', description: 'Men: loud · Women: softly · Until Tawaf' },
+  { key: 'haram', label: 'Step 5 · Entering Masjid Al-Haram', description: 'Enter with right foot · Recite du’a' },
+  { key: 'tawaf_prep', label: 'Step 6 · Performing Tawaf', description: "State of Wudu · Men: Iztiba'" },
+  { key: 'tawaf_start', label: 'Step 7 · Start Tawaf', description: 'Black Stone · 7 circuits' },
+  { key: 'yemeni', label: 'Step 8 · Yemeni Corner', description: 'Recite Rabbana ātina' },
+  { key: 'circuits', label: 'Step 9 · Complete 7 Circuits', description: 'Count from first complete circuit' },
+  { key: 'after_tawaf', label: 'Step 10 · After Tawaf', description: "Maqam Ibrahim · 2 Rak'ahs" },
+  { key: 'zamzam', label: "Step 11 · Drink Zamzam", description: "Make du'a · Pour over your head" },
+  { key: 'safa', label: 'Step 12 · Mount Safa', description: 'Verse of Safa & Marwah' },
+  { key: 'safa_reach', label: 'Step 13 · Upon Reaching Safa', description: 'Face Ka’bah · Allahu Akbar' },
+  { key: 'green_lights', label: 'Step 14 · Green Lights', description: 'Men: run · Women: walk normally' },
+  { key: 'shaving', label: 'Step 15 · Shaving or Cutting Hair', description: 'Halq / Taqsir' },
+  { key: 'complete', label: 'Step 16 · Umrah Complete', description: 'May Allah accept your Umrah' },
+] as const
+
+const HAJJ_SLOTS = [
+  { key: 'header', label: 'Guide header background', description: 'Full-width image behind the Hajj guide header' },
+  { key: 'ihram_before', label: 'Step 1 · Before Assuming Ihram', description: 'Ghusl · Niyyah · Settle your affairs' },
+  { key: 'ihram_change', label: 'Step 2 · Change into Ihram', description: 'Men: two white cloths · Women: modest dress' },
+  { key: 'intention', label: 'Step 3 · Intention & Talbiyah', description: 'At the Miqat · Until Day of Eid' },
+  { key: 'mina', label: 'Step 4 · Arrive in Mina', description: '8th Dhul Hijjah · 5 prayers' },
+  { key: 'arafat', label: 'Step 5 · Stand at Arafat', description: '9th Dhul Hijjah · Wuquf' },
+  { key: 'muzdalifah', label: 'Step 6 · Night in Muzdalifah', description: 'Collect pebbles · Maghrib & Isha' },
+  { key: 'rami', label: 'Step 7 · Rami al-Jamarat', description: '10th Dhul Hijjah · 7 pebbles' },
+  { key: 'sacrifice', label: 'Step 8 · Sacrifice & Exit Ihram', description: 'Qurbani · Halq/Taqsir' },
+  { key: 'ifadah', label: "Step 9 · Tawaf al-Ifadah & Sa'i", description: 'Pillar of Hajj' },
+  { key: 'tashreeq', label: 'Step 10 · Tashreeq & Farewell Tawaf', description: '11th–13th · Tawaf al-Wida' },
+] as const
+
 const PRAY_SCREENS: PhoneScreen[] = [
   { key: 'pray-fajr', title: 'Fajr prayer', subtitle: 'Step images', slots: PRAY_SLOTS.map((s) => s.key) },
   { key: 'pray-dhuhr', title: 'Dhuhr prayer', subtitle: 'Step images', slots: PRAY_SLOTS.map((s) => s.key) },
@@ -91,6 +125,18 @@ const SCREENS: PhoneScreen[] = [
     title: 'Umrah & Hajj',
     subtitle: 'Featured Kaaba',
     slots: ['featured_kaaba'],
+  },
+  {
+    key: 'umrah',
+    title: 'Umrah Guide',
+    subtitle: 'Header background + step images',
+    slots: UMRAH_SLOTS.map((s) => s.key),
+  },
+  {
+    key: 'hajj',
+    title: 'Hajj Guide',
+    subtitle: 'Header background + step images',
+    slots: HAJJ_SLOTS.map((s) => s.key),
   },
   {
     key: 'logistics',
@@ -204,6 +250,38 @@ export function AppMediaPage() {
         media_type: 'image',
         fallback_asset: s.fallback,
         sort_order: PRAY_SLOTS.findIndex((x) => x.key === s.key) + 1,
+      }))
+      const { error } = await supabase.from('app_page_media').upsert(rows, {
+        onConflict: 'page_key,slot_key',
+      })
+      if (cancelled) return
+      if (error) {
+        toast.error(error.message)
+        return
+      }
+      await queryClient.invalidateQueries({ queryKey: ['app-page-media'] })
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [isLoading, screenKey, byPage, queryClient])
+
+  useEffect(() => {
+    if (isLoading || (screenKey !== 'umrah' && screenKey !== 'hajj')) return
+    const defs = screenKey === 'umrah' ? UMRAH_SLOTS : HAJJ_SLOTS
+    const existing = new Set((byPage.get(screenKey) ?? []).map((m) => m.slot_key))
+    const missing = defs.filter((s) => !existing.has(s.key))
+    if (missing.length === 0) return
+    let cancelled = false
+    void (async () => {
+      const rows = missing.map((s) => ({
+        page_key: screenKey,
+        slot_key: s.key,
+        label: s.label,
+        description: s.description,
+        media_type: 'image',
+        fallback_asset: null,
+        sort_order: defs.findIndex((x) => x.key === s.key) + 1,
       }))
       const { error } = await supabase.from('app_page_media').upsert(rows, {
         onConflict: 'page_key,slot_key',

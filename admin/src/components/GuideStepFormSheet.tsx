@@ -45,6 +45,7 @@ const WUDU_ICONS = [
 ]
 
 const PRAY_STEP_SLUGS = new Set(['pray-fajr', 'pray-dhuhr', 'pray-asr', 'pray-maghrib', 'pray-isha'])
+const PILGRIMAGE_SLUGS = new Set(['umrah', 'hajj'])
 
 function parseLegacyBody(body: string): Partial<GuideStep> {
   const trimmed = body.trim()
@@ -73,7 +74,8 @@ export function GuideStepFormSheet({ open, onOpenChange, guideSlug, item }: Prop
   const isNew = !item
   const isWudu = guideSlug === 'wudu'
   const isPraySteps = PRAY_STEP_SLUGS.has(guideSlug)
-  const isInstructional = isWudu || isPraySteps
+  const isPilgrimage = PILGRIMAGE_SLUGS.has(guideSlug)
+  const isInstructional = isWudu || isPraySteps || isPilgrimage
   const isPray = guideSlug === 'how-to-pray'
   const isRich = isInstructional || isPray
 
@@ -238,15 +240,19 @@ export function GuideStepFormSheet({ open, onOpenChange, guideSlug, item }: Prop
                 <Label htmlFor="step-desc">Description</Label>
                 <Textarea
                   id="step-desc"
-                  rows={3}
+                  rows={isPilgrimage ? 10 : 3}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Stand facing the Qibla…"
+                  placeholder={
+                    isPilgrimage
+                      ? 'Markdown: paragraphs, lists, **Men** / **Women**, and > blockquotes for du’as'
+                      : 'Stand facing the Qibla…'
+                  }
                   required
                 />
               </div>
               <div className="flex flex-col gap-2">
-                <Label htmlFor="step-arabic">Arabic text</Label>
+                <Label htmlFor="step-arabic">{isPilgrimage ? 'Ritual Arabic name' : 'Arabic text'}</Label>
                 <Textarea
                   id="step-arabic"
                   rows={2}

@@ -44,6 +44,50 @@ abstract final class AppAssets {
     'salam',
   ];
 
+  /// App Media `umrah.{slot}` keys, in guide step order.
+  static const umrahStepSlots = [
+    'ihram_before',
+    'ihram_change',
+    'intention',
+    'talbiyah',
+    'haram',
+    'tawaf_prep',
+    'tawaf_start',
+    'yemeni',
+    'circuits',
+    'after_tawaf',
+    'zamzam',
+    'safa',
+    'safa_reach',
+    'green_lights',
+    'shaving',
+    'complete',
+  ];
+
+  /// App Media `hajj.{slot}` keys, in guide step order.
+  static const hajjStepSlots = [
+    'ihram_before',
+    'ihram_change',
+    'intention',
+    'mina',
+    'arafat',
+    'muzdalifah',
+    'rami',
+    'sacrifice',
+    'ifadah',
+    'tashreeq',
+  ];
+
+  static String pilgrimageSlotFor(String slug, {required int stepNumber}) {
+    final slots = slug == 'hajj' ? hajjStepSlots : umrahStepSlots;
+    final i = stepNumber - 1;
+    if (i >= 0 && i < slots.length) return slots[i];
+    return slots.first;
+  }
+
+  /// App Media `{umrah|hajj}.header` — guide screen header background.
+  static const pilgrimageHeaderSlot = 'header';
+
   static const prayGuideSlugs = {
     'fajr': 'pray-fajr',
     'dhuhr': 'pray-dhuhr',
