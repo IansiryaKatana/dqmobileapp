@@ -24,7 +24,9 @@ Repo-side store blockers are implemented. Complete these **outside the Flutter t
 - [ ] Upload an APNs key to Firebase for that iOS app.
 - [ ] App Store Connect: privacy nutrition labels, age rating, encryption (HTTPS only), IAP subscription group, review demo login.
 - [ ] iPhone 6.7" screenshots (and iPad if you keep `TARGETED_DEVICE_FAMILY = 1,2`).
-- [ ] Confirm Codemagic uses bundle ID `com.donatequran.donatequran` (already set in `codemagic.yaml`).
+- [ ] On a Mac: `cp .env.example .env`, set Team in Xcode (`./scripts/build-ios.sh open`), then `APPLE_TEAM_ID=… ./scripts/build-ios.sh` and confirm `build/ios/ipa/*.ipa`.
+- [ ] Bundle ID `com.donatequran.donatequran` (already set in the Xcode project).
+- [ ] Optional: Codemagic `ios-release` if you later want cloud IPA / TestFlight uploads.
 
 ## Google Play
 

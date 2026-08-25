@@ -33,7 +33,15 @@ flutter run --dart-define-from-file=.env -d <device_id>
 See [store/RELEASE_CHECKLIST.md](store/RELEASE_CHECKLIST.md) before App Store / Play submission.
 
 - Android signing: copy `android/key.properties.example` → `android/key.properties` and add your keystore.
-- CI: Codemagic workflows in `codemagic.yaml` inject env vars and run analyze/test before build.
+- **iOS (build on your Mac — primary path):**
+  1. Install Xcode + Flutter, then `sudo xcode-select -s /Applications/Xcode.app`
+  2. `cp .env.example .env` and fill keys (include `REVENUECAT_API_KEY_IOS`)
+  3. Sign in to Xcode with your Apple ID and select a Team for the Runner target (`./scripts/build-ios.sh open`)
+  4. Build:
+     - Simulator: `./scripts/build-ios.sh sim` then `flutter run --dart-define-from-file=.env`
+     - Release IPA: `APPLE_TEAM_ID=YOUR_TEAM_ID ./scripts/build-ios.sh`
+  5. IPA output: `build/ios/ipa/*.ipa` — Bundle ID `com.donatequran.donatequran`
+- Optional CI: `codemagic.yaml` still has an `ios-release` workflow if you want cloud builds later.
 - Release builds fail closed without Supabase / RevenueCat / Stripe (no fake donation, order, or login success).
 
 ## Admin CMS (TanStack)
