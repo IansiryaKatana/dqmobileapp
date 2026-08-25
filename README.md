@@ -33,9 +33,15 @@ flutter run --dart-define-from-file=.env -d <device_id>
 See [store/RELEASE_CHECKLIST.md](store/RELEASE_CHECKLIST.md) before App Store / Play submission.
 
 - Android signing: copy `android/key.properties.example` → `android/key.properties` and add your keystore.
-- **iOS (macOS):** `./scripts/build-ios.sh` after filling `.env` and setting your Apple Team ID in `ios/ExportOptions.plist`. Bundle ID is `com.donatequran.donatequran`.
-- **iOS (CI):** Codemagic workflow `ios-release` signs with App Store profiles, builds an IPA, and uploads to TestFlight. Name the App Store Connect API key `app_store_credentials` (or change `integrations.app_store_connect` in `codemagic.yaml` to match). Put `SUPABASE_*`, `REVENUECAT_API_KEY_IOS`, and `STRIPE_PUBLISHABLE_KEY` in that env group.
-- CI: Codemagic workflows in `codemagic.yaml` inject env vars and run analyze/test before build.
+- **iOS (build on your Mac — primary path):**
+  1. Install Xcode + Flutter, then `sudo xcode-select -s /Applications/Xcode.app`
+  2. `cp .env.example .env` and fill keys (include `REVENUECAT_API_KEY_IOS`)
+  3. Sign in to Xcode with your Apple ID and select a Team for the Runner target (`./scripts/build-ios.sh open`)
+  4. Build:
+     - Simulator: `./scripts/build-ios.sh sim` then `flutter run --dart-define-from-file=.env`
+     - Release IPA: `APPLE_TEAM_ID=YOUR_TEAM_ID ./scripts/build-ios.sh`
+  5. IPA output: `build/ios/ipa/*.ipa` — Bundle ID `com.donatequran.donatequran`
+- Optional CI: `codemagic.yaml` still has an `ios-release` workflow if you want cloud builds later.
 - Release builds fail closed without Supabase / RevenueCat / Stripe (no fake donation, order, or login success).
 
 ## Admin CMS (TanStack)
