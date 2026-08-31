@@ -66,8 +66,12 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>Donate Quran may use the camera to scan your payment card when you pay postage to order a free Quran.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Donate Quran uses your location to show Qibla direction and prayer times.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Donate Quran uses your location to show Qibla direction and prayer times. Location is only used while you are using the app.</string>
 	<key>NSUserNotificationsUsageDescription</key>
 	<string>Donate Quran sends order updates, donation confirmations, and scholar replies.</string>
 	<key>NSMotionUsageDescription</key>

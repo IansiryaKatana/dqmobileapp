@@ -59,6 +59,6 @@ class DefaultFirebaseOptions {
     projectId: 'awesome-62ce1',
     databaseURL: 'https://awesome-62ce1.firebaseio.com',
     storageBucket: 'awesome-62ce1.firebasestorage.app',
-    iosBundleId: 'com.donatequran.donatequran',
+    iosBundleId: 'ae.giovanni.donatequran',
   );
 }

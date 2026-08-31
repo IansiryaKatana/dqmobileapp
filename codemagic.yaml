@@ -46,7 +46,7 @@ workflows:
       groups:
         - app_store_credentials
       vars:
-        BUNDLE_ID: "com.donatequran.donatequran"
+        BUNDLE_ID: "ae.giovanni.donatequran"
         STRIPE_PUBLISHABLE_KEY: $STRIPE_PUBLISHABLE_KEY
     scripts:
       - name: Get packages
