@@ -27,6 +27,10 @@ abstract final class EnvConfig {
         'STRIPE_PUBLISHABLE_KEY',
         const String.fromEnvironment('STRIPE_PUBLISHABLE_KEY'),
       );
+  static String get paypalClientId => _get(
+        'PAYPAL_CLIENT_ID',
+        const String.fromEnvironment('PAYPAL_CLIENT_ID'),
+      );
 
   static bool get hasSupabase =>
       supabaseUrl.isNotEmpty &&
@@ -37,6 +41,10 @@ abstract final class EnvConfig {
       stripePublishableKey.isNotEmpty &&
       stripePublishableKey.startsWith('pk_') &&
       !stripePublishableKey.contains('your-stripe');
+
+  static bool get hasPaypal =>
+      paypalClientId.isNotEmpty &&
+      !paypalClientId.contains('your-paypal');
 
   static Future<void> load() async {
     try {

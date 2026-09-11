@@ -23,7 +23,6 @@ import type {
   OnboardingSettings,
   OrderCatalogSettings,
   PermissionsSettings,
-  PostageSettings,
 } from '@/lib/types'
 
 const emptyCatalog: OrderCatalogSettings = {
@@ -98,11 +97,6 @@ export function SettingsPage() {
   const [logisticsJson, setLogisticsJson] = useState('{\n  "groups": []\n}')
   const [catalog, setCatalog] = useState<OrderCatalogSettings>(emptyCatalog)
   const [catalogJson, setCatalogJson] = useState('')
-  const [postage, setPostage] = useState<PostageSettings>({
-    product_id: 'stripe_postage_399',
-    display_pence: 399,
-    display_label: '£3.99',
-  })
   const [about, setAbout] = useState<AboutSettings>({ title: 'About Us', body: '' })
   const [links, setLinks] = useState<ExternalLinksSettings>({
     privacy: '',
@@ -173,15 +167,6 @@ export function SettingsPage() {
         products: Array.isArray(cat.products) ? cat.products : [],
       })
       setCatalogJson(JSON.stringify(cat, null, 2))
-    }
-
-    const post = pick('postage') as PostageSettings | undefined
-    if (post) {
-      setPostage({
-        product_id: post.product_id ?? 'stripe_postage_399',
-        display_pence: Number(post.display_pence) || 399,
-        display_label: post.display_label ?? '£3.99',
-      })
     }
 
     const aboutVal = pick('about') as AboutSettings | undefined
@@ -355,15 +340,6 @@ export function SettingsPage() {
       languages: catalog.languages,
       delivery_note: catalog.delivery_note,
       products,
-    })
-  }
-
-  function onSavePostage(e: FormEvent) {
-    e.preventDefault()
-    void upsert('postage', {
-      product_id: postage.product_id.trim() || 'stripe_postage_399',
-      display_pence: Number(postage.display_pence) || 399,
-      display_label: postage.display_label,
     })
   }
 
@@ -711,47 +687,25 @@ export function SettingsPage() {
         </Button>
       </form>
 
-      <form onSubmit={onSavePostage} className="mt-6 flex flex-col gap-4 rounded-xl border border-border bg-surface p-5 shadow-sm">
+      <div className="mt-6 flex flex-col gap-3 rounded-xl border border-border bg-surface p-5 shadow-sm">
         <div>
-          <h3 className="font-semibold text-ink">Postage display</h3>
+          <h3 className="font-semibold text-ink">Order prices (PayPal)</h3>
           <p className="mt-1 text-xs text-ink-muted">
-            CMS can change displayed pence/label used by mobile. Postage is charged with Stripe
-            (not App Store / Play Billing). The amount charged in the app is server-fixed at
-            £3.99; keep display pence in sync with that.
+            Cost, postage, and totals are locked in app and Edge Function code (
+            <code>order_pricing</code>
+            ). CMS cannot change the amount PayPal charges. First Quran is free plus £7.50 P&amp;P;
+            extra copies and boxes follow the published table. One PayPal payment for the Total.
           </p>
         </div>
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="post-id">Product ID</Label>
-          <Input
-            id="post-id"
-            value={postage.product_id}
-            onChange={(e) => setPostage({ ...postage, product_id: e.target.value })}
-          />
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="post-pence">Display pence</Label>
-            <Input
-              id="post-pence"
-              type="number"
-              min={0}
-              value={postage.display_pence}
-              onChange={(e) => setPostage({ ...postage, display_pence: Number(e.target.value) })}
-            />
-          </div>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="post-label">Display label</Label>
-            <Input
-              id="post-label"
-              value={postage.display_label}
-              onChange={(e) => setPostage({ ...postage, display_label: e.target.value })}
-            />
-          </div>
-        </div>
-        <Button type="submit" size="sm" className="self-start" disabled={saving === 'postage'}>
-          {saving === 'postage' ? 'Saving…' : 'Save postage'}
-        </Button>
-      </form>
+        <ul className="list-disc space-y-1 pl-5 text-xs text-ink-muted">
+          <li>1 copy: Free + £7.50 = £7.50</li>
+          <li>2 copies: £10 + £2.50 = £12.50</li>
+          <li>3–4 copies: £13 + £2.00 = £15.00</li>
+          <li>5 copies: £15 + £2.50 = £17.50</li>
+          <li>6–9 copies: £18 + £2.00 = £20.00</li>
+          <li>Boxes (10 Qurans each): £25–£260 total depending on box count</li>
+        </ul>
+      </div>
 
       <form onSubmit={onSaveLegal} className="mt-6 flex flex-col gap-4 rounded-xl border border-border bg-surface p-5 shadow-sm">
         <div>

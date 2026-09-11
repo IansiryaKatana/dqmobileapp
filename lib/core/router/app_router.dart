@@ -25,6 +25,7 @@ import '../../shared/widgets/dq_web_screen.dart';
 import '../../shared/widgets/legal_document_screen.dart';
 import '../models/checkout_args.dart';
 import '../services/content_repository.dart';
+import '../services/order_pricing.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 final _shellNavigatorHomeKey = GlobalKey<NavigatorState>(debugLabel: 'home');
@@ -46,7 +47,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       final loc = state.matchedLocation;
       if (loc == '/splash') return null;
 
-      const authEntry = ['/login', '/signup'];
+      const authEntry = ['/login', '/signup', '/verify-email', '/reset-password'];
       final onAuthEntry = authEntry.any((p) => loc == p || loc.startsWith('$p/'));
 
       if (!onboardingComplete && !loc.startsWith('/onboarding') && !onAuthEntry) {
@@ -155,7 +156,18 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/order/detail',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (_, state) => OrderDetailScreen(title: state.extra as String? ?? '1 Free Quran Copy'),
+        builder: (_, state) {
+          final extra = state.extra;
+          final product = extra is OrderProductArgs
+              ? extra
+              : const OrderProductArgs(
+                  title: '1 Quran',
+                  kind: OrderPackKind.copies,
+                  minQuantity: 1,
+                  maxQuantity: 1,
+                );
+          return OrderDetailScreen(product: product);
+        },
       ),
       GoRoute(
         path: '/order/checkout',
@@ -163,9 +175,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, state) {
           final extra = state.extra as OrderCheckoutArgs?;
           return OrderCheckoutScreen(
-            title: extra?.title ?? '1 Free Quran Copy',
+            title: extra?.title ?? '1 Quran',
             language: extra?.language ?? 'English',
             quantity: extra?.quantity ?? 1,
+            kind: extra?.kind ?? OrderPackKind.copies,
           );
         },
       ),
@@ -256,6 +269,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/reset-password', parentNavigatorKey: _rootNavigatorKey, builder: (_, __) => const ResetPasswordScreen()),
       GoRoute(path: '/login', parentNavigatorKey: _rootNavigatorKey, builder: (_, __) => const LoginScreen()),
       GoRoute(path: '/signup', parentNavigatorKey: _rootNavigatorKey, builder: (_, __) => const SignupScreen()),
+      GoRoute(
+        path: '/verify-email',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (_, state) => VerifyEmailScreen(email: state.extra as String? ?? ''),
+      ),
       GoRoute(path: '/profile', parentNavigatorKey: _rootNavigatorKey, builder: (_, __) => const ProfileScreen()),
       GoRoute(path: '/language', parentNavigatorKey: _rootNavigatorKey, builder: (_, __) => const LanguageSelectScreen()),
       GoRoute(path: '/faq', parentNavigatorKey: _rootNavigatorKey, builder: (_, __) => const FaqScreen()),

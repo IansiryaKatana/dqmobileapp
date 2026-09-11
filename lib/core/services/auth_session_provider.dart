@@ -11,10 +11,16 @@ final authSessionProvider = Provider<void>((ref) {
 
   final sub = client.auth.onAuthStateChange.listen((event) async {
     if (event.event == AuthChangeEvent.signedOut) {
+      AuthRepository.recoveryPending = false;
       ref.read(appStateProvider.notifier).logout();
       return;
     }
+    if (event.event == AuthChangeEvent.passwordRecovery) {
+      AuthRepository.recoveryPending = true;
+      return;
+    }
     if (event.event == AuthChangeEvent.signedIn && event.session?.user != null) {
+      if (AuthRepository.recoveryPending) return;
       await ref.read(authRepositoryProvider).restoreSession();
     }
   });

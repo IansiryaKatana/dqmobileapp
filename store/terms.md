@@ -1,6 +1,6 @@
 # Donate Quran — Terms & Conditions
 
-**Last updated:** 18 August 2026
+**Last updated:** 8 September 2026
 
 These terms apply to the Donate Quran mobile app. By using the app you agree to them.
 
@@ -12,7 +12,7 @@ Monthly donations are auto-renewing subscriptions. They renew at the same price 
 
 ## Quran orders
 
-Quran copies are free. Postage and packaging is charged separately through Stripe (not the App Store or Play Store), because it is a physical delivery. We aim to dispatch within 5–10 business days. Delivery times vary by destination.
+Quran copies are free. Postage and packaging is charged separately through PayPal (not the App Store or Play Store), because it is a physical delivery. We aim to dispatch within 5–10 business days. Delivery times vary by destination.
 
 ## Accounts
 

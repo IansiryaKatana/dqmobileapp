@@ -11,11 +11,11 @@ Repo-side store blockers are implemented. Complete these **outside the Flutter t
 
 ## Payments
 
-- [ ] Create a Stripe account and product/price for £3.99 GBP postage (the app charges a server-fixed 399 pence).
-- [ ] Set Supabase secret `STRIPE_SECRET_KEY`.
-- [ ] Set `STRIPE_PUBLISHABLE_KEY` in local `.env` and Codemagic.
-- [ ] `supabase db push` (includes `orders.stripe_payment_intent_id` and donation-copy updates).
-- [ ] Deploy functions: `create-postage-payment`, `complete-postage-order`, `delete-account`.
+- [ ] Create a PayPal REST app (sandbox first, then live) with GBP checkout.
+- [ ] Set Supabase secrets `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, and `PAYPAL_MODE` (`sandbox` or `live`).
+- [ ] Set `PAYPAL_CLIENT_ID` in local `.env` and Codemagic.
+- [ ] `supabase db push` (includes `orders.paypal_order_id` and donation-copy updates).
+- [ ] Deploy functions: `create-paypal-payment`, `complete-paypal-order`, `delete-account`.
 - [ ] Create RevenueCat / App Store / Play **donation** products only (`dq_donate_*_once|monthly`). Do not create postage as IAP.
 
 ## Apple
@@ -35,7 +35,7 @@ Repo-side store blockers are implemented. Complete these **outside the Flutter t
 
 ## Capture screenshots
 
-See `store/screenshots/README.md`. Capture Home, Donate, Quran reader, Qibla, and Order checkout (Stripe postage copy).
+See `store/screenshots/README.md`. Capture Home, Donate, Quran reader, Qibla, and Order checkout (PayPal postage copy).
 
 ## Optional
 

@@ -1,32 +1,20 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../shared/widgets/paypal_checkout_web_view.dart';
 import '../config/env_config.dart';
 import 'order_pricing.dart';
 import 'order_repository.dart';
 
-/// Stripe PaymentSheet for physical Quran orders (not store IAP).
-abstract final class PostagePaymentService {
-  static bool _initialized = false;
-
-  static bool get isConfigured => _initialized && EnvConfig.hasStripe && EnvConfig.hasSupabase;
-
-  static Future<void> init() async {
-    if (_initialized) return;
-    if (!EnvConfig.hasStripe) {
-      if (kDebugMode) debugPrint('Stripe publishable key not configured');
-      return;
-    }
-    Stripe.publishableKey = EnvConfig.stripePublishableKey;
-    await Stripe.instance.applySettings();
-    _initialized = true;
-  }
+/// PayPal Checkout for physical Quran orders (not store IAP).
+abstract final class PaypalPaymentService {
+  static bool get isConfigured => EnvConfig.hasPaypal && EnvConfig.hasSupabase;
 
   /// Charges Cost + Postage (Total) then inserts the order via Edge Function.
-  /// Debug without Stripe returns a local stub reference (caller may continue).
+  /// Debug without PayPal returns a local stub reference (caller may continue).
   static Future<String> payAndCreateOrder({
+    required BuildContext context,
     required String title,
     required int quantity,
     required OrderPackKind kind,
@@ -60,35 +48,26 @@ abstract final class PostagePaymentService {
     }
 
     final client = EnvConfig.supabase!;
-    final created = await _invoke(client, 'create-postage-payment', {
+    final created = await _invoke(client, 'create-paypal-payment', {
       'kind': kind.apiValue,
       'quantity': quantity,
     });
-    final clientSecret = created['client_secret'] as String?;
-    final paymentIntentId = created['payment_intent_id'] as String?;
-    if (clientSecret == null || clientSecret.isEmpty || paymentIntentId == null) {
+    final approvalUrl = created['approval_url'] as String?;
+    final paypalOrderId = created['order_id'] as String?;
+    if (approvalUrl == null || approvalUrl.isEmpty || paypalOrderId == null) {
       throw Exception('Postage payment could not be started. Please try again.');
     }
 
-    try {
-      await Stripe.instance.initPaymentSheet(
-        paymentSheetParameters: SetupPaymentSheetParameters(
-          paymentIntentClientSecret: clientSecret,
-          merchantDisplayName: 'Donate Quran',
-          style: ThemeMode.system,
-        ),
-      );
-      await Stripe.instance.presentPaymentSheet();
-    } on StripeException catch (e) {
-      if (e.error.code == FailureCode.Canceled) {
-        throw Exception('Postage payment was cancelled.');
-      }
-      if (kDebugMode) debugPrint('Stripe postage failed: ${e.error.message}');
-      throw Exception('Postage payment was not completed. Please try again.');
+    if (!context.mounted) {
+      throw Exception('Postage payment was cancelled.');
+    }
+    final approved = await PaypalCheckoutWebView.open(context, approvalUrl: approvalUrl);
+    if (!approved) {
+      throw Exception('Postage payment was cancelled.');
     }
 
-    final completed = await _invoke(client, 'complete-postage-order', {
-      'payment_intent_id': paymentIntentId,
+    final completed = await _invoke(client, 'complete-paypal-order', {
+      'paypal_order_id': paypalOrderId,
       'title': title,
       'kind': kind.apiValue,
       'quantity': quantity,

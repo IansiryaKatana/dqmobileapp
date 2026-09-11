@@ -17,7 +17,8 @@ class OrderRepository {
     required String language,
     required Map<String, dynamic> address,
     String? userId,
-    int postagePence = 399,
+    int postagePence = 0,
+    int costPence = 0,
     String status = 'pending',
   }) async {
     if (_client == null) {
@@ -34,6 +35,7 @@ class OrderRepository {
       'quantity': quantity,
       'language': language,
       'status': status,
+      'cost_pence': costPence,
       'postage_pence': postagePence,
       'address': {
         ...address,

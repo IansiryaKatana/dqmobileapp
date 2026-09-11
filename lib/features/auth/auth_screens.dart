@@ -45,6 +45,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             password: _password.text,
           );
       if (mounted) context.go('/home');
+    } on EmailNotConfirmedException catch (e) {
+      if (mounted) context.go('/verify-email', extra: e.email);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ErrorMessages.friendly(e))));
@@ -214,12 +216,17 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     }
     setState(() => _loading = true);
     try {
-      await ref.read(authRepositoryProvider).signUp(
+      final result = await ref.read(authRepositoryProvider).signUp(
             name: _name.text.trim(),
             email: _email.text.trim(),
             password: _password.text,
           );
-      if (mounted) context.go('/home');
+      if (!mounted) return;
+      if (result == SignUpResult.needsEmailConfirmation) {
+        context.go('/verify-email', extra: _email.text.trim());
+      } else {
+        context.go('/home');
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ErrorMessages.friendly(e))));
@@ -292,13 +299,13 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    InkWell(
-                      onTap: () => setState(() => _agreed = !_agreed),
-                      borderRadius: BorderRadius.circular(8),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        InkWell(
+                          onTap: () => setState(() => _agreed = !_agreed),
+                          borderRadius: BorderRadius.circular(8),
+                          child: Container(
                             width: 20,
                             height: 20,
                             margin: const EdgeInsets.only(top: 2),
@@ -309,22 +316,42 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                             ),
                             child: _agreed ? const Icon(Icons.check, size: 14, color: AppColors.onBrand) : null,
                           ),
-                          const SizedBox(width: 12),
-                          const Expanded(
-                            child: Text.rich(
-                              TextSpan(
-                                style: TextStyle(fontSize: 13, height: 1.4, color: AppColors.muted),
-                                children: [
-                                  TextSpan(text: 'I agree to the '),
-                                  TextSpan(text: 'Terms of Service', style: TextStyle(color: AppColors.yellow, fontWeight: FontWeight.w600)),
-                                  TextSpan(text: ' and '),
-                                  TextSpan(text: 'Privacy Policy', style: TextStyle(color: AppColors.yellow, fontWeight: FontWeight.w600)),
-                                ],
-                              ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text.rich(
+                            TextSpan(
+                              style: const TextStyle(fontSize: 13, height: 1.4, color: AppColors.muted),
+                              children: [
+                                const TextSpan(text: 'I agree to the '),
+                                WidgetSpan(
+                                  alignment: PlaceholderAlignment.baseline,
+                                  baseline: TextBaseline.alphabetic,
+                                  child: GestureDetector(
+                                    onTap: () => context.push('/terms'),
+                                    child: const Text(
+                                      'Terms of Service',
+                                      style: TextStyle(fontSize: 13, height: 1.4, color: AppColors.yellow, fontWeight: FontWeight.w600),
+                                    ),
+                                  ),
+                                ),
+                                const TextSpan(text: ' and '),
+                                WidgetSpan(
+                                  alignment: PlaceholderAlignment.baseline,
+                                  baseline: TextBaseline.alphabetic,
+                                  child: GestureDetector(
+                                    onTap: () => context.push('/privacy'),
+                                    child: const Text(
+                                      'Privacy Policy',
+                                      style: TextStyle(fontSize: 13, height: 1.4, color: AppColors.yellow, fontWeight: FontWeight.w600),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 20),
                     DqPrimaryButton(label: _loading ? 'Creating...' : 'Create Account', onPressed: _loading ? null : _signup),
@@ -968,6 +995,105 @@ class AboutUsScreen extends ConsumerWidget {
   }
 }
 
+class VerifyEmailScreen extends ConsumerStatefulWidget {
+  const VerifyEmailScreen({super.key, required this.email});
+
+  final String email;
+
+  @override
+  ConsumerState<VerifyEmailScreen> createState() => _VerifyEmailScreenState();
+}
+
+class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
+  bool _resending = false;
+  bool _checking = false;
+
+  Future<void> _resend() async {
+    if (widget.email.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Enter your email on the login screen first')),
+      );
+      return;
+    }
+    setState(() => _resending = true);
+    try {
+      await ref.read(authRepositoryProvider).resendSignupEmail(widget.email);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Confirmation email sent')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ErrorMessages.friendly(e))));
+      }
+    } finally {
+      if (mounted) setState(() => _resending = false);
+    }
+  }
+
+  Future<void> _continue() async {
+    setState(() => _checking = true);
+    try {
+      await ref.read(authRepositoryProvider).restoreSession();
+      if (!mounted) return;
+      if (ref.read(appStateProvider).user != null) {
+        context.go('/home');
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Email not confirmed yet. Check your inbox and try again.')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ErrorMessages.friendly(e))));
+      }
+    } finally {
+      if (mounted) setState(() => _checking = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final email = widget.email;
+    return Scaffold(
+      backgroundColor: AppColors.cream,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              DqScreenHeader(title: 'Confirm email', onBack: () => context.go('/login')),
+              const SizedBox(height: 24),
+              Expanded(
+                child: DqEmptyState(
+                  icon: Icons.mark_email_unread_outlined,
+                  title: 'Check your inbox',
+                  message: email.isEmpty
+                      ? 'We sent a confirmation link to your email. Open it, then come back to sign in.'
+                      : 'We sent a confirmation link to $email. Open it, then come back to continue.',
+                ),
+              ),
+              DqPrimaryButton(
+                label: _checking ? 'Checking...' : "I've confirmed my email",
+                onPressed: _checking ? null : _continue,
+              ),
+              const SizedBox(height: 12),
+              Center(
+                child: TextButton(
+                  onPressed: _resending ? null : _resend,
+                  child: Text(_resending ? 'Sending...' : 'Resend confirmation email'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class ResetPasswordScreen extends ConsumerStatefulWidget {
   const ResetPasswordScreen({super.key});
 
@@ -1009,63 +1135,68 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final hasSession = ref.watch(authRepositoryProvider).hasRecoverySession;
+    return ValueListenableBuilder<bool>(
+      valueListenable: AuthRepository.recoveryPendingListenable,
+      builder: (context, _, _) {
+        final hasSession = ref.read(authRepositoryProvider).hasRecoverySession;
 
-    return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                DqScreenHeader(title: 'Reset Password', onBack: () => context.go('/login')),
-                const SizedBox(height: 24),
-                if (!hasSession)
-                  const Expanded(
-                    child: DqEmptyState(
-                      icon: Icons.link_off,
-                      title: 'Invalid or expired link',
-                      message: 'Request a new password reset email from the login screen.',
-                    ),
-                  )
-                else ...[
-                  const Text('Choose a new password for your account.', style: TextStyle(color: AppColors.muted)),
-                  const SizedBox(height: 20),
-                  TextFormField(
-                    controller: _password,
-                    obscureText: _obscure,
-                    decoration: InputDecoration(
-                      labelText: 'New password',
-                      suffixIcon: IconButton(
-                        icon: Icon(_obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined),
-                        onPressed: () => setState(() => _obscure = !_obscure),
+        return Scaffold(
+          body: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    DqScreenHeader(title: 'Reset Password', onBack: () => context.go('/login')),
+                    const SizedBox(height: 24),
+                    if (!hasSession)
+                      const Expanded(
+                        child: DqEmptyState(
+                          icon: Icons.link_off,
+                          title: 'Invalid or expired link',
+                          message: 'Request a new password reset email from the login screen.',
+                        ),
+                      )
+                    else ...[
+                      const Text('Choose a new password for your account.', style: TextStyle(color: AppColors.muted)),
+                      const SizedBox(height: 20),
+                      TextFormField(
+                        controller: _password,
+                        obscureText: _obscure,
+                        decoration: InputDecoration(
+                          labelText: 'New password',
+                          suffixIcon: IconButton(
+                            icon: Icon(_obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined),
+                            onPressed: () => setState(() => _obscure = !_obscure),
+                          ),
+                        ),
+                        validator: Validators.password,
                       ),
-                    ),
-                    validator: Validators.password,
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _confirm,
-                    obscureText: _obscure,
-                    decoration: const InputDecoration(labelText: 'Confirm password'),
-                    validator: (v) {
-                      if (v != _password.text) return 'Passwords do not match';
-                      return null;
-                    },
-                  ),
-                  const Spacer(),
-                  DqPrimaryButton(
-                    label: _loading ? 'Updating...' : 'Update Password',
-                    onPressed: _loading ? null : _submit,
-                  ),
-                ],
-              ],
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: _confirm,
+                        obscureText: _obscure,
+                        decoration: const InputDecoration(labelText: 'Confirm password'),
+                        validator: (v) {
+                          if (v != _password.text) return 'Passwords do not match';
+                          return null;
+                        },
+                      ),
+                      const Spacer(),
+                      DqPrimaryButton(
+                        label: _loading ? 'Updating...' : 'Update Password',
+                        onPressed: _loading ? null : _submit,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

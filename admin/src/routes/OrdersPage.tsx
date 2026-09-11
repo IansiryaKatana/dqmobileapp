@@ -42,6 +42,16 @@ function formatAddress(address: OrderRow['address']) {
   return lines.length ? lines.join('\n') : JSON.stringify(address, null, 2)
 }
 
+function paymentLabel(order: OrderRow) {
+  if (order.payment_provider === 'paypal' || order.paypal_order_id) return 'PayPal'
+  if (order.payment_provider === 'stripe' || order.stripe_payment_intent_id) return 'Stripe'
+  return '—'
+}
+
+function paymentId(order: OrderRow) {
+  return order.paypal_order_id || order.stripe_payment_intent_id || null
+}
+
 export function OrdersPage() {
   const queryClient = useQueryClient()
   const search = routeApi.useSearch()
@@ -71,7 +81,7 @@ export function OrdersPage() {
   } = usePaginatedQuery<OrderRow>({
     queryKey: ['orders-admin'],
     table: 'orders',
-    select: 'id, reference, quantity, language, status, postage_pence, address, created_at, user_id',
+    select: 'id, reference, quantity, language, status, cost_pence, postage_pence, address, created_at, user_id, paypal_order_id, stripe_payment_intent_id, payment_provider',
     order: { column: 'created_at', ascending: false },
     filters,
     search: searchTerm,
@@ -89,9 +99,24 @@ export function OrdersPage() {
         cell: ({ row }) => <Badge variant="secondary">{row.original.status}</Badge>,
       },
       {
+        id: 'cost',
+        header: 'Cost',
+        cell: ({ row }) => formatPence(row.original.cost_pence ?? 0),
+      },
+      {
         id: 'postage',
         header: 'Postage',
         cell: ({ row }) => formatPence(row.original.postage_pence),
+      },
+      {
+        id: 'total',
+        header: 'Total',
+        cell: ({ row }) => formatPence((row.original.cost_pence ?? 0) + row.original.postage_pence),
+      },
+      {
+        id: 'payment',
+        header: 'Payment',
+        cell: ({ row }) => paymentLabel(row.original),
       },
       {
         id: 'created',
@@ -215,8 +240,18 @@ export function OrdersPage() {
                   <p className="font-medium text-ink">{selected.language}</p>
                 </div>
                 <div>
+                  <p className="text-ink-muted">Cost</p>
+                  <p className="font-medium text-ink">{formatPence(selected.cost_pence ?? 0)}</p>
+                </div>
+                <div>
                   <p className="text-ink-muted">Postage</p>
                   <p className="font-medium text-ink">{formatPence(selected.postage_pence)}</p>
+                </div>
+                <div>
+                  <p className="text-ink-muted">Total</p>
+                  <p className="font-medium text-ink">
+                    {formatPence((selected.cost_pence ?? 0) + selected.postage_pence)}
+                  </p>
                 </div>
                 <div>
                   <p className="text-ink-muted">Created</p>
@@ -226,6 +261,13 @@ export function OrdersPage() {
               <div>
                 <p className="text-ink-muted">User ID</p>
                 <p className="break-all font-mono text-xs text-ink">{selected.user_id ?? '—'}</p>
+              </div>
+              <div>
+                <p className="text-ink-muted">Payment</p>
+                <p className="font-medium text-ink">{paymentLabel(selected)}</p>
+                {paymentId(selected) && (
+                  <p className="mt-1 break-all font-mono text-xs text-ink-muted">{paymentId(selected)}</p>
+                )}
               </div>
               <div>
                 <Label htmlFor="order-status">Status</Label>

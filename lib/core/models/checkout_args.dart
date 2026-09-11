@@ -1,3 +1,5 @@
+import '../services/order_pricing.dart';
+
 class DonateCheckoutArgs {
   const DonateCheckoutArgs({required this.amount, required this.frequency});
 
@@ -17,16 +19,32 @@ class DonateSuccessArgs {
   final String? email;
 }
 
+class OrderProductArgs {
+  const OrderProductArgs({
+    required this.title,
+    required this.kind,
+    required this.minQuantity,
+    required this.maxQuantity,
+  });
+
+  final String title;
+  final OrderPackKind kind;
+  final int minQuantity;
+  final int maxQuantity;
+}
+
 class OrderCheckoutArgs {
   const OrderCheckoutArgs({
     required this.title,
     required this.language,
     required this.quantity,
+    required this.kind,
   });
 
   final String title;
   final String language;
   final int quantity;
+  final OrderPackKind kind;
 }
 
 class OrderSuccessArgs {
@@ -65,7 +83,8 @@ class OrderDetailArgs {
     required this.status,
     required this.createdAt,
     this.address,
-    this.postagePence = 399,
+    this.postagePence = 0,
+    this.costPence = 0,
   });
 
   final String reference;
@@ -75,4 +94,5 @@ class OrderDetailArgs {
   final DateTime createdAt;
   final Map<String, dynamic>? address;
   final int postagePence;
+  final int costPence;
 }

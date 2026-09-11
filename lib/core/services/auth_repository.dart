@@ -7,11 +7,25 @@ import '../providers/app_state_provider.dart';
 import 'purchase_service.dart';
 import 'push_notification_service.dart';
 
+enum SignUpResult { signedIn, needsEmailConfirmation }
+
+class EmailNotConfirmedException implements Exception {
+  EmailNotConfirmedException(this.email);
+  final String email;
+  @override
+  String toString() => 'Email not confirmed';
+}
+
 class AuthRepository {
   AuthRepository(this._client, this._notifier);
 
   final SupabaseClient? _client;
   final AppStateNotifier _notifier;
+
+  static final recoveryPendingListenable = ValueNotifier<bool>(false);
+
+  static bool get recoveryPending => recoveryPendingListenable.value;
+  static set recoveryPending(bool value) => recoveryPendingListenable.value = value;
 
   bool get isAvailable => _client != null;
 
@@ -33,7 +47,7 @@ class AuthRepository {
     await PushNotificationService.syncTokenForUser(user.id);
   }
 
-  Future<void> signUp({
+  Future<SignUpResult> signUp({
     required String email,
     required String password,
     required String name,
@@ -43,7 +57,7 @@ class AuthRepository {
         throw Exception('Sign up requires Supabase configuration');
       }
       _notifier.login(AppUser(name: name, email: email));
-      return;
+      return SignUpResult.signedIn;
     }
     final response = await _client.auth.signUp(
       email: email,
@@ -51,15 +65,20 @@ class AuthRepository {
       data: {'name': name},
     );
     final user = response.user;
-    if (user != null) {
-      await _client.from('profiles').upsert({
-        'id': user.id,
-        'name': name,
-        'email': email,
-      });
-      _notifier.login(AppUser(name: name, email: email, id: user.id));
-      await PushNotificationService.syncTokenForUser(user.id);
+    if (user == null) {
+      throw Exception('Sign up could not be completed. Please try again.');
     }
+    if (response.session == null) {
+      return SignUpResult.needsEmailConfirmation;
+    }
+    await _client.from('profiles').upsert({
+      'id': user.id,
+      'name': name,
+      'email': email,
+    });
+    _notifier.login(AppUser(name: name, email: email, id: user.id));
+    await PushNotificationService.syncTokenForUser(user.id);
+    return SignUpResult.signedIn;
   }
 
   Future<void> signIn({required String email, required String password}) async {
@@ -70,27 +89,42 @@ class AuthRepository {
       _notifier.login(AppUser(name: email.split('@').first, email: email));
       return;
     }
-    final response = await _client.auth.signInWithPassword(
-      email: email,
-      password: password,
-    );
-    final user = response.user;
-    if (user != null) {
-      final profile = await _client
-          .from('profiles')
-          .select('name, email')
-          .eq('id', user.id)
-          .maybeSingle();
-      _notifier.login(AppUser(
-        name: profile?['name'] as String? ?? email.split('@').first,
-        email: profile?['email'] as String? ?? email,
-        id: user.id,
-      ));
-      await PushNotificationService.syncTokenForUser(user.id);
+    try {
+      final response = await _client.auth.signInWithPassword(
+        email: email,
+        password: password,
+      );
+      final user = response.user;
+      if (user != null) {
+        final profile = await _client
+            .from('profiles')
+            .select('name, email')
+            .eq('id', user.id)
+            .maybeSingle();
+        _notifier.login(AppUser(
+          name: profile?['name'] as String? ?? email.split('@').first,
+          email: profile?['email'] as String? ?? email,
+          id: user.id,
+        ));
+        await PushNotificationService.syncTokenForUser(user.id);
+      }
+    } on AuthException catch (e) {
+      if (_isEmailNotConfirmed(e)) {
+        throw EmailNotConfirmedException(email);
+      }
+      rethrow;
     }
   }
 
+  Future<void> resendSignupEmail(String email) async {
+    if (_client == null) {
+      throw Exception('Email confirmation requires Supabase configuration');
+    }
+    await _client.auth.resend(type: OtpType.signup, email: email);
+  }
+
   Future<void> signOut() async {
+    recoveryPending = false;
     if (_client != null) await _client.auth.signOut();
     _notifier.logout();
   }
@@ -129,6 +163,7 @@ class AuthRepository {
     if (_client == null) {
       throw Exception('Password reset requires Supabase configuration');
     }
+    recoveryPending = true;
     await _client.auth.getSessionFromUrl(uri);
   }
 
@@ -137,6 +172,9 @@ class AuthRepository {
       throw Exception('Password update requires Supabase configuration');
     }
     await _client.auth.updateUser(UserAttributes(password: password));
+    recoveryPending = false;
+    await _client.auth.signOut();
+    _notifier.logout();
   }
 
   /// Updates display name on `profiles` and local app state. Name only (no auth email change).
@@ -168,7 +206,14 @@ class AuthRepository {
 
   bool get hasRecoverySession {
     if (_client == null) return false;
-    return _client.auth.currentSession != null;
+    return recoveryPending && _client.auth.currentSession != null;
+  }
+
+  static bool _isEmailNotConfirmed(AuthException error) {
+    final message = error.message.toLowerCase();
+    final code = error.code?.toLowerCase() ?? '';
+    return message.contains('email not confirmed') ||
+        code.contains('email_not_confirmed');
   }
 }
 

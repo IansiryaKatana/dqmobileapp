@@ -303,6 +303,7 @@ class OrderHistoryScreen extends ConsumerWidget {
                             createdAt: o.createdAt,
                             address: o.address,
                             postagePence: o.postagePence,
+                            costPence: o.costPence,
                           ),
                         ),
                         child: Row(
@@ -362,7 +363,9 @@ class OrderDetailHistoryScreen extends StatelessWidget {
                         _row(context, 'Status', args.status),
                         _row(context, 'Quantity', '${args.quantity}'),
                         _row(context, 'Language', args.language),
+                        _row(context, 'Cost', args.costPence == 0 ? 'Free' : '£${(args.costPence / 100).toStringAsFixed(2)}'),
                         _row(context, 'Postage', '£${(args.postagePence / 100).toStringAsFixed(2)}'),
+                        _row(context, 'Total', '£${((args.costPence + args.postagePence) / 100).toStringAsFixed(2)}'),
                         _row(context, 'Ordered', args.createdAt.toLocal().toString().split('.').first),
                       ],
                     ),

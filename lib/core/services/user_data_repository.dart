@@ -28,7 +28,8 @@ class OrderRecord {
     required this.status,
     required this.createdAt,
     this.address,
-    this.postagePence = 399,
+    this.postagePence = 0,
+    this.costPence = 0,
   });
 
   final String reference;
@@ -38,6 +39,9 @@ class OrderRecord {
   final DateTime createdAt;
   final Map<String, dynamic>? address;
   final int postagePence;
+  final int costPence;
+
+  int get totalPence => costPence + postagePence;
 }
 
 class SavedAddress {
@@ -101,7 +105,7 @@ class UserDataRepository {
     if (_client == null) return [];
     final rows = await _client
         .from('orders')
-        .select('reference, quantity, language, status, created_at, address, postage_pence')
+        .select('reference, quantity, language, status, created_at, address, postage_pence, cost_pence')
         .eq('user_id', userId)
         .order('created_at', ascending: false);
     return (rows as List).map((row) => _orderFromRow(row)).toList();
@@ -111,7 +115,7 @@ class UserDataRepository {
     if (_client == null) return null;
     final row = await _client
         .from('orders')
-        .select('reference, quantity, language, status, created_at, address, postage_pence')
+        .select('reference, quantity, language, status, created_at, address, postage_pence, cost_pence')
         .eq('user_id', userId)
         .eq('reference', reference)
         .maybeSingle();
@@ -127,7 +131,8 @@ class UserDataRepository {
       status: row['status'] as String,
       createdAt: DateTime.parse(row['created_at'] as String),
       address: row['address'] as Map<String, dynamic>?,
-      postagePence: row['postage_pence'] as int? ?? 399,
+      postagePence: row['postage_pence'] as int? ?? 0,
+      costPence: row['cost_pence'] as int? ?? 0,
     );
   }
 

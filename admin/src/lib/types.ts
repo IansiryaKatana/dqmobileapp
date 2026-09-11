@@ -159,6 +159,9 @@ export type OrderCatalogProduct = {
   route_title: string
   qty_label: string
   cta: string
+  pack_kind?: 'copies' | 'boxes'
+  min_qty?: number
+  max_qty?: number
 }
 
 export type OrderCatalogSettings = {
@@ -274,10 +277,14 @@ export type OrderRow = {
   quantity: number
   language: string
   status: string
+  cost_pence: number
   postage_pence: number
   address: OrderAddress | null
   created_at: string
   user_id: string | null
+  paypal_order_id?: string | null
+  stripe_payment_intent_id?: string | null
+  payment_provider?: string | null
 }
 
 export type ScholarStatus = 'submitted' | 'in_review' | 'answered' | 'closed'

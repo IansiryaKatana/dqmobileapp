@@ -7,7 +7,7 @@ import 'content_repository.dart';
 
 /// RevenueCat / store product identifiers for **donations only**.
 ///
-/// Physical postage is charged via Stripe (see [PostagePaymentService]).
+/// Physical postage is charged via PayPal (see `PaypalPaymentService`).
 ///
 /// Create matching donation products in App Store Connect and Google Play, then
 /// attach them to a RevenueCat offering. Expected IDs:

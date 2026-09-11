@@ -5,7 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../core/models/checkout_args.dart';
 import '../../core/providers/app_state_provider.dart';
 import '../../core/services/content_repository.dart';
-import '../../core/services/postage_payment_service.dart';
+import '../../core/services/order_pricing.dart';
+import '../../core/services/paypal_payment_service.dart';
 import '../../core/services/user_data_repository.dart';
 import '../../core/constants/app_assets.dart';
 import '../../core/services/app_media_repository.dart';
@@ -30,7 +31,7 @@ class OrderScreen extends ConsumerWidget {
       body: SafeArea(
         child: Column(
           children: [
-            DqScreenHeader(title: 'Order Free Quran', onBack: () => context.pop()),
+            DqScreenHeader(title: 'Order Quran', onBack: () => context.pop()),
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.all(20),
@@ -63,8 +64,10 @@ class OrderScreen extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  ...catalog.products.map(
-                    (p) => _productCard(context, p.title, p.description, p.routeTitle, p.qtyLabel, p.cta),
+                  ...catalog.products.map((p) => _productCard(context, p)),
+                  TextButton(
+                    onPressed: () => context.push('/ask-scholar'),
+                    child: const Text('Need 160+ copies? Contact us'),
                   ),
                 ],
               ),
@@ -75,7 +78,7 @@ class OrderScreen extends ConsumerWidget {
     );
   }
 
-  Widget _productCard(BuildContext context, String title, String desc, String routeTitle, String qty, String cta) {
+  Widget _productCard(BuildContext context, OrderCatalogProduct product) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -90,14 +93,14 @@ class OrderScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.charcoal)),
+                Text(product.title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.charcoal)),
                 const SizedBox(height: 4),
-                Text(desc, style: const TextStyle(color: AppColors.muted, fontSize: 12)),
+                Text(product.description, style: const TextStyle(color: AppColors.muted, fontSize: 12)),
                 const SizedBox(height: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(color: AppColors.sand, borderRadius: BorderRadius.circular(20)),
-                  child: Text(qty, style: const TextStyle(fontSize: 11, color: AppColors.muted, fontWeight: FontWeight.w500)),
+                  child: Text(product.qtyLabel, style: const TextStyle(fontSize: 11, color: AppColors.muted, fontWeight: FontWeight.w500)),
                 ),
               ],
             ),
@@ -107,11 +110,19 @@ class OrderScreen extends ConsumerWidget {
             color: AppColors.yellow,
             borderRadius: BorderRadius.circular(16),
             child: InkWell(
-              onTap: () => context.push('/order/detail', extra: routeTitle),
+              onTap: () => context.push(
+                '/order/detail',
+                extra: OrderProductArgs(
+                  title: product.title,
+                  kind: product.kind,
+                  minQuantity: product.minQuantity,
+                  maxQuantity: product.maxQuantity,
+                ),
+              ),
               borderRadius: BorderRadius.circular(16),
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                child: Text(cta, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.onBrand)),
+                child: Text(product.cta, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.onBrand)),
               ),
             ),
           ),
@@ -122,8 +133,8 @@ class OrderScreen extends ConsumerWidget {
 }
 
 class OrderDetailScreen extends ConsumerStatefulWidget {
-  const OrderDetailScreen({super.key, required this.title});
-  final String title;
+  const OrderDetailScreen({super.key, required this.product});
+  final OrderProductArgs product;
 
   @override
   ConsumerState<OrderDetailScreen> createState() => _OrderDetailScreenState();
@@ -131,19 +142,23 @@ class OrderDetailScreen extends ConsumerStatefulWidget {
 
 class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
   String? _language;
-  int _quantity = 1;
+  late int _quantity = widget.product.minQuantity;
 
   @override
   Widget build(BuildContext context) {
     final catalog = ref.watch(orderCatalogProvider).valueOrNull ?? OrderCatalogCopy.fallback;
     final languages = catalog.languages.isNotEmpty ? catalog.languages : OrderCatalogCopy.fallback.languages;
     final language = _language ?? languages.first;
+    final product = widget.product;
+    final quote = OrderPricing.tryQuote(product.kind, _quantity);
+    final locked = product.minQuantity == product.maxQuantity;
+    final qtyLabel = product.kind == OrderPackKind.boxes ? 'Boxes' : 'Quantity';
 
     return Scaffold(
       body: SafeArea(
         child: Column(
           children: [
-            DqScreenHeader(title: widget.title, onBack: () => context.pop()),
+            DqScreenHeader(title: product.title, onBack: () => context.pop()),
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.all(20),
@@ -173,16 +188,37 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Quantity', style: TextStyle(fontWeight: FontWeight.w600)),
+                      Text(qtyLabel, style: const TextStyle(fontWeight: FontWeight.w600)),
                       Row(
                         children: [
-                          IconButton(onPressed: _quantity > 1 ? () => setState(() => _quantity--) : null, icon: const Icon(Icons.remove_circle_outline)),
-                          Text('$_quantity', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                          IconButton(onPressed: () => setState(() => _quantity++), icon: const Icon(Icons.add_circle_outline)),
+                          IconButton(
+                            onPressed: !locked && _quantity > product.minQuantity
+                                ? () => setState(() => _quantity--)
+                                : null,
+                            icon: const Icon(Icons.remove_circle_outline),
+                          ),
+                          Text(
+                            product.kind == OrderPackKind.boxes ? '$_quantity × 10' : '$_quantity',
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                          ),
+                          IconButton(
+                            onPressed: !locked && _quantity < product.maxQuantity
+                                ? () => setState(() => _quantity++)
+                                : null,
+                            icon: const Icon(Icons.add_circle_outline),
+                          ),
                         ],
                       ),
                     ],
                   ),
+                  if (product.kind == OrderPackKind.boxes)
+                    Text(
+                      '${quote?.quranCount ?? _quantity * OrderPricing.copiesPerBox} Qurans',
+                      style: TextStyle(color: context.dq.muted, fontSize: 12),
+                    ),
+                  const SizedBox(height: 16),
+                  if (quote != null) _PriceBreakdown(quote: quote),
+                  const SizedBox(height: 12),
                   Text(catalog.deliveryNote, style: TextStyle(color: context.dq.muted, fontSize: 12)),
                 ],
               ),
@@ -192,11 +228,18 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
               child: Column(
                 children: [
                   DqPrimaryButton(
-                    label: 'Add to Order',
-                    onPressed: () => context.push(
-                      '/order/checkout',
-                      extra: OrderCheckoutArgs(title: widget.title, language: language, quantity: _quantity),
-                    ),
+                    label: quote == null ? 'Unavailable' : 'Continue — ${OrderPricing.formatPence(quote.totalPence)}',
+                    onPressed: quote == null
+                        ? null
+                        : () => context.push(
+                              '/order/checkout',
+                              extra: OrderCheckoutArgs(
+                                title: product.title,
+                                language: language,
+                                quantity: _quantity,
+                                kind: product.kind,
+                              ),
+                            ),
                   ),
                   TextButton(onPressed: () => context.push('/ask-scholar'), child: const Text('Ask a Question')),
                 ],
@@ -215,11 +258,13 @@ class OrderCheckoutScreen extends ConsumerStatefulWidget {
     required this.title,
     required this.language,
     required this.quantity,
+    required this.kind,
   });
 
   final String title;
   final String language;
   final int quantity;
+  final OrderPackKind kind;
 
   @override
   ConsumerState<OrderCheckoutScreen> createState() => _OrderCheckoutScreenState();
@@ -242,12 +287,21 @@ class _OrderCheckoutScreenState extends ConsumerState<OrderCheckoutScreen> {
 
   Future<void> _placeOrder() async {
     if (!_formKey.currentState!.validate()) return;
+    final quote = OrderPricing.tryQuote(widget.kind, widget.quantity);
+    if (quote == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('This quantity is not available.')),
+      );
+      return;
+    }
     setState(() => _loading = true);
     try {
       final user = ref.read(appStateProvider).user;
-      final reference = await PostagePaymentService.payAndCreateOrder(
+      final reference = await PaypalPaymentService.payAndCreateOrder(
+        context: context,
         title: widget.title,
         quantity: widget.quantity,
+        kind: widget.kind,
         language: widget.language,
         userId: user?.id,
         line1: _address.text.trim(),
@@ -276,8 +330,7 @@ class _OrderCheckoutScreenState extends ConsumerState<OrderCheckoutScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final postage = ref.watch(postageCopyProvider).valueOrNull ?? PostageCopy.fallback;
-    final label = postage.displayLabel;
+    final quote = OrderPricing.quote(widget.kind, widget.quantity);
 
     return Scaffold(
       body: SafeArea(
@@ -296,22 +349,11 @@ class _OrderCheckoutScreenState extends ConsumerState<OrderCheckoutScreen> {
                     const SizedBox(height: 12),
                     TextFormField(controller: _postcode, decoration: const InputDecoration(labelText: 'Postcode'), validator: Validators.postcode),
                     const SizedBox(height: 20),
-                    DqCard(
-                      child: Column(
-                        children: [
-                          const Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text('Subtotal'), Text('£0.00')]),
-                          const SizedBox(height: 8),
-                          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Postage & Packaging'), Text(label)]),
-                          const Divider(),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text('Total', style: TextStyle(fontWeight: FontWeight.bold)),
-                              Text(label, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.yellow)),
-                            ],
-                          ),
-                        ],
-                      ),
+                    _PriceBreakdown(
+                      quote: quote,
+                      quantityLabel: widget.kind == OrderPackKind.boxes
+                          ? '${widget.quantity} boxes (${quote.quranCount} Qurans)'
+                          : '${quote.quranCount} Quran${quote.quranCount == 1 ? '' : 's'}',
                     ),
                     const SizedBox(height: 16),
                     DqCard(
@@ -321,7 +363,7 @@ class _OrderCheckoutScreenState extends ConsumerState<OrderCheckoutScreen> {
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
-                              'Postage is paid securely with Stripe (not the App Store / Play Store).',
+                              'Paid securely with PayPal (not the App Store / Play Store).',
                               style: TextStyle(fontSize: 13, color: context.dq.muted),
                             ),
                           ),
@@ -334,10 +376,66 @@ class _OrderCheckoutScreenState extends ConsumerState<OrderCheckoutScreen> {
             ),
             Padding(
               padding: const EdgeInsets.all(20),
-              child: DqPrimaryButton(label: _loading ? 'Placing order...' : 'Place Order', onPressed: _loading ? null : _placeOrder),
+              child: DqPrimaryButton(
+                label: _loading ? 'Placing order...' : 'Pay ${OrderPricing.formatPence(quote.totalPence)}',
+                onPressed: _loading ? null : _placeOrder,
+              ),
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _PriceBreakdown extends StatelessWidget {
+  const _PriceBreakdown({required this.quote, this.quantityLabel});
+
+  final OrderPriceQuote quote;
+  final String? quantityLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    return DqCard(
+      child: Column(
+        children: [
+          if (quantityLabel != null) ...[
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Quantity'),
+                Text(quantityLabel!),
+              ],
+            ),
+            const SizedBox(height: 8),
+          ],
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Cost'),
+              Text(quote.costPence == 0 ? 'Free' : OrderPricing.formatPence(quote.costPence)),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Postage and Packaging'),
+              Text(OrderPricing.formatPence(quote.postagePence)),
+            ],
+          ),
+          const Divider(),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Total', style: TextStyle(fontWeight: FontWeight.bold)),
+              Text(
+                OrderPricing.formatPence(quote.totalPence),
+                style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.yellow),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

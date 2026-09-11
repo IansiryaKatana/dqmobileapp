@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config/env_config.dart';
 import 'content_service.dart';
+import 'order_pricing.dart';
 
 class CmsListResult<T> {
   const CmsListResult(this.items, {this.usedFallback = false});
@@ -460,6 +461,9 @@ class OrderCatalogProduct {
     required this.routeTitle,
     required this.qtyLabel,
     required this.cta,
+    required this.kind,
+    required this.minQuantity,
+    required this.maxQuantity,
   });
 
   final String title;
@@ -467,15 +471,47 @@ class OrderCatalogProduct {
   final String routeTitle;
   final String qtyLabel;
   final String cta;
+  final OrderPackKind kind;
+  final int minQuantity;
+  final int maxQuantity;
 
   factory OrderCatalogProduct.fromJson(Map<String, dynamic> json) {
+    final title = json['title'] as String? ?? '';
+    final routeTitle = json['route_title'] as String? ?? title;
+    final kind = OrderPackKind.tryParse(json['pack_kind'] as String?) ??
+        _inferKind(routeTitle, title);
+    final inferred = _inferRange(kind, routeTitle, title);
+    final minQty = json['min_qty'];
+    final maxQty = json['max_qty'];
     return OrderCatalogProduct(
-      title: json['title'] as String? ?? '',
+      title: title,
       description: json['description'] as String? ?? '',
-      routeTitle: json['route_title'] as String? ?? json['title'] as String? ?? '',
+      routeTitle: routeTitle,
       qtyLabel: json['qty_label'] as String? ?? '',
       cta: json['cta'] as String? ?? 'Order',
+      kind: kind,
+      minQuantity: minQty is int ? minQty : int.tryParse('$minQty') ?? inferred.$1,
+      maxQuantity: maxQty is int ? maxQty : int.tryParse('$maxQty') ?? inferred.$2,
     );
+  }
+
+  static OrderPackKind _inferKind(String routeTitle, String title) {
+    final blob = '${routeTitle.toLowerCase()} ${title.toLowerCase()}';
+    if (blob.contains('box') || blob.contains('bulk') || blob.contains('pallet') || blob.contains('10+')) {
+      return OrderPackKind.boxes;
+    }
+    return OrderPackKind.copies;
+  }
+
+  static (int, int) _inferRange(OrderPackKind kind, String routeTitle, String title) {
+    if (kind == OrderPackKind.boxes) {
+      return (OrderPricing.minBoxQuantity, OrderPricing.maxBoxQuantity);
+    }
+    final blob = '$routeTitle $title';
+    if (blob.contains('2') && (blob.contains('9') || blob.contains('–') || blob.contains('-'))) {
+      return (2, OrderPricing.maxCopyQuantity);
+    }
+    return (1, 1);
   }
 }
 
@@ -495,38 +531,40 @@ class OrderCatalogCopy {
   final List<OrderCatalogProduct> products;
 
   static const fallback = OrderCatalogCopy(
-    heroTitle: 'Receive or share a free Quran copy',
-    heroSubtitle: 'Quran copies are free. Postage and packaging may apply.',
+    heroTitle: 'Order a Quran copy',
+    heroSubtitle: 'The first Quran is free. Extra copies include a contribution plus postage.',
     languages: ['English', 'Arabic'],
-    deliveryNote: 'Delivery note: Allow 5–10 business days for dispatch.',
+    deliveryNote: 'Allow 5–10 business days for dispatch.',
     products: [
       OrderCatalogProduct(
-        title: '1 Free Quran Copy',
-        description: 'For personal use or to share',
-        routeTitle: '1 Free Quran Copy',
-        qtyLabel: '1 copy',
+        title: '1 Quran',
+        description: 'Free copy. You pay postage and packaging.',
+        routeTitle: '1 Quran',
+        qtyLabel: '1 copy · £7.50 total',
         cta: 'Order Free',
+        kind: OrderPackKind.copies,
+        minQuantity: 1,
+        maxQuantity: 1,
       ),
       OrderCatalogProduct(
-        title: '2–9 Copies',
+        title: '2–9 Qurans',
         description: 'Share with family and friends',
-        routeTitle: '2–9 Copies',
+        routeTitle: '2–9 Qurans',
         qtyLabel: '2–9 copies',
         cta: 'Order Now',
+        kind: OrderPackKind.copies,
+        minQuantity: 2,
+        maxQuantity: 9,
       ),
       OrderCatalogProduct(
-        title: 'Bulk Order 10+',
-        description: 'For mosques and organisations',
-        routeTitle: '10+ Copies',
-        qtyLabel: '10+ copies',
-        cta: 'Bulk Order',
-      ),
-      OrderCatalogProduct(
-        title: 'Pallet Order',
-        description: 'Large-scale distribution',
-        routeTitle: 'Pallet',
-        qtyLabel: '100+ copies',
-        cta: 'Get in Touch',
+        title: 'Boxes',
+        description: '10 Qurans per box, for mosques and organisations',
+        routeTitle: 'Boxes',
+        qtyLabel: '1–15 boxes',
+        cta: 'Order Boxes',
+        kind: OrderPackKind.boxes,
+        minQuantity: 1,
+        maxQuantity: 15,
       ),
     ],
   );
@@ -569,9 +607,9 @@ class PostageCopy {
   final String displayLabel;
 
   static const fallback = PostageCopy(
-    productId: 'stripe_postage_399',
-    displayPence: 399,
-    displayLabel: '£3.99',
+    productId: 'paypal_order_total',
+    displayPence: 750,
+    displayLabel: '£7.50',
   );
 
   factory PostageCopy.fromJson(Map<String, dynamic>? json) {
